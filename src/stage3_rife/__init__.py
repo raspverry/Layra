@@ -5,13 +5,14 @@
 """
 
 from src.stage3_rife.eye_blink import generate_eye_blink_frames
-from src.stage3_rife.interpolator import RIFEInterpolator
+from src.stage3_rife.interpolator import RIFEInterpolator, RIFEInterpolatorLike
 from src.stage3_rife.mouth_frames import VOWELS, generate_mouth_frames
 from src.stage3_rife.pipeline import Stage3Pipeline, run_stage3
 
 __all__ = [
     "VOWELS",
     "RIFEInterpolator",
+    "RIFEInterpolatorLike",
     "Stage3Pipeline",
     "generate_eye_blink_frames",
     "generate_mouth_frames",

@@ -6,7 +6,7 @@ PSD → LayerSet → SAM3 보정 → body.png / hair.png / hair_back.png 저장.
 from __future__ import annotations
 
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -27,9 +27,25 @@ logger = get_logger(__name__)
 
 @dataclass(slots=True)
 class Stage2Pipeline:
-    """Stage 2 end-to-end 파이프라인."""
+    """Stage 2 end-to-end 파이프라인.
+
+    Extractors can be injected via constructor kwargs for testing. When
+    omitted, the pipeline builds its own from ``self.config`` on first use.
+    """
 
     config: Stage2Config
+    neck_extractor: NeckExtractor | None = field(default=None)
+    mouth_extractor: MouthExtractor | None = field(default=None)
+
+    def _get_neck(self) -> NeckExtractor:
+        if self.neck_extractor is None:
+            self.neck_extractor = NeckExtractor(config=self.config)
+        return self.neck_extractor
+
+    def _get_mouth(self) -> MouthExtractor:
+        if self.mouth_extractor is None:
+            self.mouth_extractor = MouthExtractor(config=self.config)
+        return self.mouth_extractor
 
     def __call__(
         self,
@@ -50,7 +66,6 @@ class Stage2Pipeline:
         Returns:
             Stage2Output.
         """
-
         start = time.perf_counter()
         output_dir.mkdir(parents=True, exist_ok=True)
         logger.info(f"Stage 2 start: psd={psd_path.name}")
@@ -59,8 +74,7 @@ class Stage2Pipeline:
         layer_set = parse_psd(psd_path)
         parts = layerset_to_body_parts(layer_set)
 
-        neck_extractor = NeckExtractor(config=self.config)
-        neck_mask = neck_extractor.extract(rgb)
+        neck_mask = self._get_neck().extract(rgb)
 
         body_rgba = _apply_mask_to_rgb(rgb, neck_mask, base=parts.body)
         body_path = output_dir / "body.png"
@@ -77,9 +91,8 @@ class Stage2Pipeline:
         mouth_closed_path: Path | None = None
         mouth_open_path: Path | None = None
         if open_mouth_image is not None:
-            mouth_extractor = MouthExtractor(config=self.config)
             open_rgb = load_rgb(open_mouth_image)
-            closed_mask, open_mask = mouth_extractor.extract_pair(rgb, open_rgb)
+            closed_mask, open_mask = self._get_mouth().extract_pair(rgb, open_rgb)
             closed_rgba = _mask_to_rgba(rgb, closed_mask)
             open_rgba = _mask_to_rgba(open_rgb, open_mask)
 

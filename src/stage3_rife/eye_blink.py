@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 
 from src.common.image_io import save_rgb
 from src.common.logging import get_logger
-from src.stage3_rife.interpolator import RIFEInterpolator
+from src.stage3_rife.interpolator import RIFEInterpolatorLike
 
 if TYPE_CHECKING:
     import numpy as np
@@ -19,7 +19,7 @@ def generate_eye_blink_frames(
     eye_open: np.ndarray,
     eye_closed: np.ndarray,
     output_dir: Path,
-    interpolator: RIFEInterpolator,
+    interpolator: RIFEInterpolatorLike,
     n_frames: int = 8,
 ) -> list[Path]:
     """열림 ↔ 닫힘 프레임 시퀀스를 생성해 PNG로 저장.

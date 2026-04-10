@@ -41,6 +41,24 @@
   - PachiPakuGen `extract_neck_mask.py` 분석 → SAM3 **text prompt 방식** 발견,
     `sam3-rife.md` 업데이트, `neck_extractor.py`/`mouth_extractor.py`에
     리팩토링 TODO 주석 추가
+- [x] **Phase 1e: End-to-end 테스트 커버리지 확장** (2026-04-10)
+  - `Stage2Pipeline`에 `neck_extractor` / `mouth_extractor` 주입 경로 추가
+    (dataclass field로 선택적 DI)
+  - `src/stage3_rife/interpolator.py`에 `RIFEInterpolatorLike` Protocol 정의
+  - `generate_eye_blink_frames` / `generate_mouth_frames` 타입 힌트를
+    `RIFEInterpolatorLike`로 업그레이드 → 실제 ONNX session 없이도
+    프로토콜 만족 mock으로 테스트 가능
+  - 테스트 20개 추가:
+    - `tests/stage2_sam3/test_pipeline.py` (3 tests) — synthetic PSD
+      + mock SAM3 backend로 end-to-end. body/hair/hair_back/mouth 쌍
+      파일 생성 검증, hair_back 없는 경우 edge case
+    - `tests/stage3_rife/test_frame_generators.py` (7 tests) —
+      MockRIFEInterpolator로 eye_blink + mouth_frames. 프레임 수,
+      시작/끝 매칭, nested output 디렉토리 생성, 모음 누락 skip
+    - `tests/test_cli.py` (10 tests) — typer CliRunner로 info/stage1/
+      stage2/stage3/run 명령 help + exit code 검증. `layra info`는
+      실제 Rich 테이블 출력까지 확인.
+  - **`make ci`: 115/115 pytest, 0 mypy errors, 34 source files**
 - [x] **Phase 1d: Stage 2 text-prompt 리팩토링** (2026-04-10)
   - `src/stage2_sam3/sam3_backend.py` (new) — `Sam3TextExtractor` +
     `combine_masks` + `postprocess_mask` + `extract_with_processor` 순수 함수 +

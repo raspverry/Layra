@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING
 
 from src.common.image_io import save_rgb
 from src.common.logging import get_logger
-from src.stage3_rife.interpolator import RIFEInterpolator
+from src.stage3_rife.interpolator import RIFEInterpolatorLike
 
 if TYPE_CHECKING:
     import numpy as np
@@ -26,7 +26,7 @@ def generate_mouth_frames(
     mouth_closed: np.ndarray,
     mouth_shapes: dict[str, np.ndarray],
     output_dir: Path,
-    interpolator: RIFEInterpolator,
+    interpolator: RIFEInterpolatorLike,
     n_frames: int = 8,
 ) -> dict[str, list[Path]]:
     """5모음 각각에 대해 닫힘 → 모음 시퀀스 생성.

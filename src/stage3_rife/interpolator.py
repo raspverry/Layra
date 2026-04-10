@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Protocol
 
 from src.common.logging import get_logger
 
@@ -16,6 +16,22 @@ if TYPE_CHECKING:
     import numpy as np
 
 logger = get_logger(__name__)
+
+
+class RIFEInterpolatorLike(Protocol):
+    """Structural protocol for RIFE-compatible interpolators.
+
+    Implemented by `RIFEInterpolator` as well as test mocks. Used by
+    `generate_eye_blink_frames` / `generate_mouth_frames` so those
+    functions don't require a real ONNX session to be tested.
+    """
+
+    def interpolate(
+        self,
+        frame_start: np.ndarray,
+        frame_end: np.ndarray,
+        n_frames: int = 8,
+    ) -> list[np.ndarray]: ...
 
 
 @dataclass(slots=True)
