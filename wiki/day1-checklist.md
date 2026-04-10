@@ -6,8 +6,8 @@
 
 ```bash
 # 레포 클론
-git clone https://github.com/your-username/see-through-project
-cd see-through-project
+git clone https://github.com/raspverry/layra
+cd layra
 
 # 환경 세팅 스크립트 실행
 chmod +x setup.sh

@@ -82,8 +82,11 @@ print(providers)  # CoreMLExecutionProvider 있는지 확인
 
 ## 해결된 블로커
 
-(해결되면 여기로 이동)
-
 | 번호 | 내용 | 해결 방법 | 해결 날짜 |
 |------|------|----------|----------|
-| | | | |
+| MINOR-001 | Wiki SAM3 설치법 3곳 불일치 (PyPI 이름 vs git+) | 전부 git+로 통일 | 2026-04-10 |
+| MINOR-002 | setup.sh SAM3 fallback echo가 항상 실행되던 쉘 버그 | if/then/fi 블록으로 재작성 | 2026-04-10 |
+| MINOR-003 | requirements.txt의 onnxruntime>=2.0.0 존재하지 않는 버전 | >=1.17.0으로 수정 | 2026-04-10 |
+| MINOR-004 | day1-checklist.md 자리표시자 URL | raspverry/layra로 교체 | 2026-04-10 |
+| MINOR-005 | 루트 LICENSE, .gitignore, README.md 누락 | Apache 2.0 + 표준 .gitignore + README 추가 | 2026-04-10 |
+| MINOR-006 | experiments/ 디렉토리 구조 wiki vs 실제 불일치 | results/ 하위로 통일 + 시드 파일 생성 | 2026-04-10 |

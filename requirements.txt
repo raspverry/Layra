@@ -19,7 +19,7 @@ accelerate
 safetensors
 
 # --- ONNX (RIFE) ---
-onnxruntime>=2.0.0           # CoreML / CPU fallback
+onnxruntime>=1.17.0          # CoreML / CPU fallback
 
 # --- Image Processing ---
 Pillow>=10.0.0

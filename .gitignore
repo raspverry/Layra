@@ -1,0 +1,85 @@
+# ============================================================
+# Layra / See-Through Project — .gitignore
+# ============================================================
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg
+*.egg-info/
+.eggs/
+build/
+dist/
+wheels/
+pip-wheel-metadata/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+
+# --- venv ---
+.venv/
+venv/
+env/
+ENV/
+
+# --- IDE ---
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# --- ML artifacts ---
+models/
+weights/
+checkpoints/
+*.pth
+*.pt
+*.safetensors
+*.onnx
+*.mlx
+*.npz
+
+# --- Experiment outputs ---
+experiments/results/**/*.json
+experiments/results/**/*.tsv
+experiments/results/**/*.html
+experiments/test_images/*.png
+experiments/test_images/*.jpg
+experiments/test_images/*.jpeg
+!experiments/test_images/.gitkeep
+
+# --- Output artifacts ---
+output/
+outputs/
+*.psd
+!assets/*.psd
+
+# --- Env files ---
+.env
+.env.local
+.env.*.local
+
+# --- Logs ---
+*.log
+logs/
+
+# --- OS ---
+.DS_Store
+._*
+
+# --- Jupyter ---
+.ipynb_checkpoints/
+*.ipynb
+
+# --- Claude Code ---
+.claude/settings.local.json

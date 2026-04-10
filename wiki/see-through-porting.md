@@ -172,7 +172,9 @@ latent space 인코딩/디코딩:
 
 | 날짜 | 작업 | 상태 | 메모 |
 |------|------|------|------|
-| (미시작) | | | |
+| 2026-04-10 | `src/stage1_layerdiff/` 스캐폴딩 | ✅ | `Stage1Pipeline`, `LayerDiffuseMLX`, `MarigoldMLX`, `weights.py` 인터페이스 정의. 전부 NotImplementedError. |
+| 2026-04-10 | `src/common/psd_io.py` `parse_psd` 구현 | ✅ | psd-tools 기반. `LayerName` StrEnum 매칭. |
+| 2026-04-10 | `src/common/psd_io.py` `write_psd` 임시 구현 | ⚠️ | Pillow로 플랫 PSD 저장. Stage 1 완성 시 진짜 레이어 PSD 작성기로 교체 필요. |
 
 ---
 

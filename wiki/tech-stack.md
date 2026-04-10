@@ -90,8 +90,8 @@ psd-tools                # PSD 파싱/생성
 numpy                    # 배열 연산
 opencv-python            # 이미지 처리
 
-# SAM3
-segment-anything-3       # Meta SAM3
+# SAM3 (PyPI 미등록 — git+ 설치)
+# pip install git+https://github.com/facebookresearch/segment-anything-3.git
 
 # Utilities
 tqdm                     # 진행 표시
@@ -119,8 +119,8 @@ pip install onnxruntime
 
 # 5. 나머지
 pip install diffusers transformers pillow psd-tools numpy opencv-python
-pip install segment-anything-3
-pip install tqdm loguru pydantic
+pip install git+https://github.com/facebookresearch/segment-anything-3.git
+pip install tqdm loguru pydantic typer rich
 
 # 6. 모델 weights 다운로드
 # See-Through: scripts/download_models.py 참조

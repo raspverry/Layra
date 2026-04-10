@@ -20,8 +20,8 @@
 ### 설치
 
 ```bash
-# SAM3 (Segment Anything Model 3)
-pip install segment-anything-3
+# SAM3 (PyPI 미등록 — git+로 설치)
+pip install git+https://github.com/facebookresearch/segment-anything-3.git
 
 # 모델 weights (~3.2GB)
 # https://github.com/facebookresearch/segment-anything-3

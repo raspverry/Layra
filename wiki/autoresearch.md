@@ -80,22 +80,23 @@ experiments/results/speed_optimization.tsv 에 기록
 
 ```
 experiments/
-├── speed_optimization/
-│   ├── dashboard.html      # 실시간 대시보드
-│   ├── results.json        # 차트 데이터
-│   ├── results.tsv         # 실험 기록
-│   └── changelog.md        # 변경 이력
+├── test_images/                 # 기준 테스트 이미지 (5개, git 제외)
+│   ├── test_001.png
+│   ├── test_002.png
+│   └── ...
 │
-├── quality_optimization/
-│   ├── dashboard.html
-│   ├── results.json
-│   ├── results.tsv
-│   └── changelog.md
-│
-└── test_images/            # 기준 테스트 이미지 (5개)
-    ├── test_001.png
-    ├── test_002.png
-    └── ...
+└── results/
+    ├── speed_optimization/
+    │   ├── results.tsv          # 실험 기록
+    │   ├── changelog.md         # 라운드별 요약
+    │   ├── results.json         # (선택) 차트 데이터
+    │   └── dashboard.html       # (선택) 실시간 대시보드
+    │
+    └── quality_optimization/
+        ├── results.tsv
+        ├── changelog.md
+        ├── results.json
+        └── dashboard.html
 ```
 
 ---

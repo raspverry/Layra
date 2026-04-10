@@ -65,17 +65,18 @@ echo "✅ 의존성 설치 완료"
 # SAM3 (별도)
 echo ""
 echo "--- SAM3 설치 ---"
-pip install git+https://github.com/facebookresearch/segment-anything-3.git --quiet 2>/dev/null || \
+if ! pip install git+https://github.com/facebookresearch/segment-anything-3.git --quiet 2>/dev/null; then
     echo "⚠️  SAM3 설치 실패. 수동으로 설치 필요:"
     echo "   pip install git+https://github.com/facebookresearch/segment-anything-3.git"
+fi
 
 # 디렉토리 구조 생성
 echo ""
 echo "--- 디렉토리 구조 생성 ---"
 mkdir -p models
 mkdir -p experiments/test_images
-mkdir -p experiments/speed_optimization
-mkdir -p experiments/quality_optimization
+mkdir -p experiments/results/speed_optimization
+mkdir -p experiments/results/quality_optimization
 echo "✅ 디렉토리 생성 완료"
 
 # MLX Stable Diffusion 예제 확인

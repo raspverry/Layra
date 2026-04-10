@@ -88,6 +88,47 @@
 
 ---
 
+## ADR-007: 프로젝트 라이선스 → Apache 2.0
+
+**날짜**: 2026-04-10
+**결정**: Layra 본인 코드는 Apache 2.0으로 배포
+
+**이유**:
+- 주요 참조 레포 중 상당수가 Apache 2.0 (See-Through, LayerDiffuse, Marigold, SAM)
+- 라이선스 호환성 단순화 (특히 See-Through 기반 derivative work)
+- PachiPakuGen은 MIT라 Apache 2.0에 호환됨
+- 특허 조항으로 기여자 보호
+- 서비스화 시에도 본인 코드는 동일 라이선스 유지 가능
+
+**대안**: MIT
+**기각 이유**: 파생 저작물 범위가 넓어 특허 조항이 있는 Apache 2.0이 안전
+
+**주의**: 이것은 **Layra 본인 코드**의 라이선스일 뿐, 모델 weights의 라이선스는
+BLOCKER-001에 따라 별도 확인 필요.
+
+---
+
+## ADR-008: 초기 코드 구조 → src/common + stage 모듈 분리
+
+**날짜**: 2026-04-10
+**결정**:
+- `src/common/` — 설정(Pydantic), 로깅(loguru), 타입, 이미지/PSD I/O
+- `src/stage1_layerdiff/`, `src/stage2_sam3/`, `src/stage3_rife/` — Stage별 파이프라인
+- `src/cli.py` — typer 기반 단일 엔트리포인트
+- Stage 간 의존성은 파일(PSD, PNG)로만 (in-memory 결합 없음)
+
+**이유**:
+- Stage마다 필요한 런타임(MLX/PyTorch MPS/ONNX)이 다름 → import 격리 필요
+- 파일 기반 전달이면 각 Stage를 독립적으로 테스트/디버깅 가능
+- RunPod Serverless에서 Stage별 분리 배포 여지 확보
+- CLI 명령도 stage1 / stage2 / stage3 / run 분리 → 부분 실행 가능
+
+**결과**:
+- `segment_anything_3`, `mlx`, `onnxruntime` import는 전부 함수 내부에서 lazy
+- Stage 2/3 일부는 MLX 없어도 psd-tools/onnxruntime만으로 개발 가능
+
+---
+
 ## 추가 결정 사항
 
 (작업하면서 새로운 결정이 생기면 여기에 추가)

@@ -1,6 +1,6 @@
 # 진행 상황
 
-## 현재 단계: 🟡 준비 (맥북 도착 대기 중)
+## 현재 단계: 🟡 Phase 0 스캐폴딩 완료, 맥북 도착 대기 중
 
 ---
 
@@ -11,6 +11,16 @@
 - [x] 위키 / 컨텍스트 시스템 구축
 - [x] 파이프라인 설계 완료
 - [x] 참조 레포 분석 완료 (See-Through, PachiPakuGen)
+- [x] **Phase 0: 초기 코드 스캐폴딩** (2026-04-10)
+  - `.gitignore`, `LICENSE` (Apache 2.0), 루트 `README.md` 추가
+  - `setup.sh` 쉘 버그 수정, `requirements.txt` onnxruntime 버전 교정
+  - Wiki의 SAM3 설치법 불일치 3건 수정
+  - `src/common/` — 설정, 로깅, 타입, 이미지/PSD I/O 모듈
+  - `src/stage1_layerdiff/` — MLX 포팅 인터페이스 (NotImplementedError)
+  - `src/stage2_sam3/` — PSD 파서 + SAM3 래퍼 + 파이프라인
+  - `src/stage3_rife/` — RIFE ONNX 래퍼 + 눈/입 프레임 생성
+  - `src/cli.py` — typer CLI (`info`, `stage1`, `stage2`, `stage3`, `run`)
+  - `experiments/results/` 시드 (speed/quality TSV + changelog)
 
 ---
 
@@ -23,6 +33,7 @@
 - [ ] Live2D Cubism 개인 플랜 가입
 - [ ] RunPod 계정 생성
 - [ ] RunPod에서 See-Through 원본 실행 (처리 시간, 메모리 기준 확보)
+- [ ] `experiments/test_images/`에 기준 이미지 5개 추가 (본인 아바타 포함)
 
 ---
 
@@ -31,9 +42,12 @@
 - [ ] Python 환경 세팅 (venv, MLX 설치)
 - [ ] MLX SD 예제 실행 확인
 - [ ] See-Through CUDA 의존성 목록 작성
-- [ ] LayerDiffuse MLX 포팅
-- [ ] Marigold MLX 포팅
-- [ ] 포팅 검증 (CUDA 출력 vs MLX 출력 IoU 비교)
+- [ ] `src/stage1_layerdiff/weights.py` — PyTorch→MLX 변환 구현
+- [ ] `src/stage1_layerdiff/model.py` — LayerDiffuseMLX UNet 구현
+- [ ] `src/stage1_layerdiff/marigold.py` — MarigoldMLX 구현
+- [ ] `src/stage1_layerdiff/inference.py` — `decompose()` 구현
+- [ ] `src/common/psd_io.py::write_psd` — 플랫 저장을 진짜 레이어 PSD로 교체
+- [ ] 포팅 검증 (CUDA 출력 vs MLX 출력 IoU 비교, `compute_iou` 사용)
 - [ ] 처리 시간 측정 및 autoresearch로 최적화
 - [ ] PSD 출력 확인
 

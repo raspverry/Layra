@@ -1,15 +1,21 @@
 # Stage 3: RIFE 프레임 보간
 
-## 구조 (예정)
+## 현재 구조 (스캐폴딩)
 
 ```
 stage3_rife/
-├── __init__.py
-├── interpolator.py     # RIFE ONNX 래퍼
-├── eye_blink.py        # 눈 깜빡임 프레임 생성
-├── mouth_frames.py     # 입 모양 5모음 프레임 생성
-└── utils.py
+├── __init__.py         # 공개 API
+├── pipeline.py         # Stage3Pipeline, Stage3Inputs
+├── interpolator.py     # RIFEInterpolator (ONNX Runtime)
+├── eye_blink.py        # generate_eye_blink_frames
+└── mouth_frames.py     # generate_mouth_frames (VOWELS = a i u e o)
 ```
+
+## 상태
+
+- `interpolator`: 로드는 lazy, CoreML → CPU fallback 자동.
+- `eye_blink` / `mouth_frames`: 실제 호출 가능 (RIFE 모델만 있으면 동작).
+- RIFE ONNX 모델은 변형이 많아 입력 키(`timestep` 유무)는 런타임에 확인.
 
 ## 시작 전 읽을 것
 
