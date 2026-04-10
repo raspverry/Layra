@@ -1,0 +1,40 @@
+# ============================================================
+# See-Through Project — Python Dependencies
+# ============================================================
+# 설치 순서:
+#   python3.12 -m venv .venv
+#   source .venv/bin/activate
+#   pip install -r requirements.txt
+# ============================================================
+
+# --- ML Core ---
+mlx                          # Apple Silicon ML 프레임워크
+torch                        # SAM3 / MPS backend용
+torchvision
+
+# --- Diffusion ---
+diffusers>=0.37.0
+transformers>=4.40.0
+accelerate
+safetensors
+
+# --- ONNX (RIFE) ---
+onnxruntime>=2.0.0           # CoreML / CPU fallback
+
+# --- Image Processing ---
+Pillow>=10.0.0
+psd-tools>=1.9.0             # PSD 파싱 / 생성
+numpy>=1.26.0
+opencv-python>=4.9.0
+
+# --- SAM3 ---
+# pip install git+https://github.com/facebookresearch/segment-anything-3.git
+# (별도 설치 필요 — PyPI 미등록)
+
+# --- Utilities ---
+tqdm
+loguru
+pydantic>=2.0.0
+python-dotenv
+typer                        # CLI 인터페이스
+rich                         # 터미널 출력 포맷
