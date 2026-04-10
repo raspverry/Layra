@@ -25,9 +25,7 @@ def _require_mlx() -> None:
     try:
         import mlx  # noqa: F401
     except ImportError as e:
-        raise RuntimeError(
-            "MLX is required. pip install mlx on Apple Silicon."
-        ) from e
+        raise RuntimeError("MLX is required. pip install mlx on Apple Silicon.") from e
 
 
 class TransparentVAE:

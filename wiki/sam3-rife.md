@@ -45,11 +45,36 @@ masks = state["masks"]  # or state["pred_masks"]
 - confidence_threshold 0.3
 - 마스크 후처리: `dilate` 2회 + Gaussian blur 7×7 → 경계선 매끄럽게
 
-**우리 구현 영향**:
-현재 `src/stage2_sam3/neck_extractor.py`와 `mouth_extractor.py`는
-점 좌표 방식으로 작성되어 있지만, text prompt 방식이 더 강력하다.
-맥북 도착 후 SAM3 실제 실행할 때 `set_text_prompt(...)` 방식으로
-리팩토링 예정. 점 좌표는 fallback으로만 유지.
+**우리 구현 상태 (2026-04-10, Phase 1d 완료)**:
+
+`src/stage2_sam3/sam3_backend.py`에 `Sam3TextExtractor`를 구현해
+PachiPakuGen과 동일한 패턴을 사용하도록 완료:
+
+```python
+from src.stage2_sam3 import Sam3TextExtractor, NeckExtractor, MouthExtractor
+
+# 저수준: 임의 prompt
+extractor = Sam3TextExtractor(config=stage2_cfg)
+mask = extractor.extract(image_rgb, prompt="neck")  # HxW uint8 0..255
+
+# 고수준: 파트 이름 → config.text_prompts 매핑
+mask = extractor.extract_named(image_rgb, "neck")
+
+# Convenience wrappers:
+neck_mask = NeckExtractor(config=cfg).extract(image)
+closed, opened = MouthExtractor(config=cfg).extract_pair(closed_img, open_img)
+```
+
+주요 설계:
+- `build_sam3_image_model` + `Sam3Processor` lazy load
+- `confidence_threshold=0.3` (PachiPakuGen과 동일 기본값)
+- `combine_masks`: 여러 detection을 `np.maximum.reduce`로 결합
+- `postprocess_mask`: `cv2.dilate` 2회 + `cv2.GaussianBlur` 7×7
+  (PachiPakuGen과 동일)
+- `config.text_prompts`로 파트 이름 → 프롬프트 매핑 (기본값 `"neck"`, `"mouth"`, `"eye"`)
+- **`inject_processor`/`inject_backend`** — mock 객체 주입으로
+  Linux 환경에서도 SAM3 없이 단위 테스트 가능 (21개 테스트 통과)
+- Legacy point-based API는 `NeckExtractor.extract_from_point`로만 남김
 
 나머지(PSD 파싱, RIFE)는 Rust 크레이트로 구현되어 있어
 Python 참조 불가 — 우리 구현은 psd-tools + onnxruntime 기반.

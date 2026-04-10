@@ -56,17 +56,56 @@ class Stage2Config(BaseModel):
         default=Path("models/sam3_vit_h.pth"),
         description="SAM3 체크포인트 경로",
     )
+    bpe_path: Path | None = Field(
+        default=None,
+        description=(
+            "SAM3 BPE 토크나이저 경로. None이면 sam3 패키지 기본값 "
+            "(sam3/assets/bpe_simple_vocab_16e6.txt.gz)을 사용."
+        ),
+    )
     device: Device = Field(
         default="mps",
         description="SAM3 실행 디바이스 (Mac은 mps)",
     )
+
+    # --- Text-prompt based extraction (PachiPakuGen 스타일) ---
+    confidence_threshold: float = Field(
+        default=0.3,
+        description="Sam3Processor confidence threshold (PachiPakuGen 값)",
+    )
+    text_prompts: dict[str, str] = Field(
+        default_factory=lambda: {
+            "neck": "neck",
+            "mouth": "mouth",
+            "eye": "eye",
+        },
+        description=(
+            "파트 이름 → SAM3 text prompt 매핑. 단일 단어 또는 콤마 구분 리스트"
+            "(e.g. 'eye,eyelid'). 기본값은 PachiPakuGen과 동일."
+        ),
+    )
+
+    # --- Mask postprocessing ---
+    postprocess_dilate_iterations: int = Field(
+        default=2,
+        description="바이너리 마스크 dilate 반복 수 (경계선 부드럽게)",
+    )
+    postprocess_blur_kernel: int = Field(
+        default=7,
+        description="Gaussian blur 커널 크기 (홀수). 0이면 블러 비활성화.",
+    )
+
+    # --- Fallback (point-based) ---
     neck_point_ratio_y: float = Field(
         default=0.45,
-        description="얼굴 미검출 시 목 위치 자동 추정 비율 (y축)",
+        description=(
+            "Text-prompt 방식이 실패하거나 fallback이 필요할 때 쓰는 "
+            "y축 비율. (deprecated: 주로 text prompt를 사용)"
+        ),
     )
     multimask_output: bool = Field(
         default=True,
-        description="SAM3 multimask 사용 여부",
+        description="legacy point-based 경로의 SAM3 multimask 사용 여부",
     )
 
 

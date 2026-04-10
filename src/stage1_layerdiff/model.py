@@ -47,18 +47,12 @@ class LayerDiffuseMLX:
     unet_config: UNetFrameConditionConfig = field(
         default_factory=UNetFrameConditionConfig
     )
-    vae_config: TransparentVAEConfig = field(
-        default_factory=TransparentVAEConfig
-    )
-    text_config: SDXLTextEncoderConfig = field(
-        default_factory=SDXLTextEncoderConfig
-    )
+    vae_config: TransparentVAEConfig = field(default_factory=TransparentVAEConfig)
+    text_config: SDXLTextEncoderConfig = field(default_factory=SDXLTextEncoderConfig)
     diffusion_config: DiffusionConfig = field(default_factory=DiffusionConfig)
     dtype: str = "bfloat16"
 
-    _unet: UNetFrameConditionModel | None = field(
-        default=None, init=False, repr=False
-    )
+    _unet: UNetFrameConditionModel | None = field(default=None, init=False, repr=False)
     _vae: TransparentVAE | None = field(default=None, init=False, repr=False)
     _text_encoder: Any = field(default=None, init=False, repr=False)
     _text_encoder_2: Any = field(default=None, init=False, repr=False)
@@ -148,8 +142,7 @@ class LayerDiffuseMLX:
         if self._vae is None:
             raise RuntimeError("VAE not loaded. Call load() first.")
         raise NotImplementedError(
-            "TransparentVAE decode → numpy pending — "
-            "see wiki/see-through-porting.md"
+            "TransparentVAE decode → numpy pending — see wiki/see-through-porting.md"
         )
 
     def _build_sampler(self, num_inference_steps: int) -> DPMSolverMultistep:

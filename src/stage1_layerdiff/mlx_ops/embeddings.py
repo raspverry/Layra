@@ -45,8 +45,7 @@ def timestep_embedding(
     #   args = timesteps[:, None] * freqs[None]
     #   emb = torch.cat([torch.cos(args), torch.sin(args)], dim=-1)
     raise NotImplementedError(
-        "timestep_embedding MLX port pending — "
-        "see wiki/see-through-porting.md"
+        "timestep_embedding MLX port pending — see wiki/see-through-porting.md"
     )
 
 
@@ -82,8 +81,7 @@ class TimestepEmbedding:
     def __call__(self, x: MLXArray) -> MLXArray:
         """x: `(batch, in_channels)` → `(batch, time_embed_dim)`."""
         raise NotImplementedError(
-            "TimestepEmbedding forward pending — "
-            "see wiki/see-through-porting.md"
+            "TimestepEmbedding forward pending — see wiki/see-through-porting.md"
         )
 
 
@@ -121,6 +119,5 @@ class SDXLAdditionEmbedding:
     ) -> MLXArray:
         """Returns `(batch, time_embed_dim)` aug embedding."""
         raise NotImplementedError(
-            "SDXLAdditionEmbedding forward pending — "
-            "see wiki/see-through-porting.md"
+            "SDXLAdditionEmbedding forward pending — see wiki/see-through-porting.md"
         )

@@ -24,9 +24,7 @@ def _require_mlx() -> None:
     try:
         import mlx  # noqa: F401
     except ImportError as e:
-        raise RuntimeError(
-            "MLX is required. pip install mlx on Apple Silicon."
-        ) from e
+        raise RuntimeError("MLX is required. pip install mlx on Apple Silicon.") from e
 
 
 class Transformer3DModel:
@@ -93,8 +91,7 @@ class Transformer3DModel:
     ) -> MLXArray:
         """x: `(B, C, num_frames, H, W)` → same shape."""
         raise NotImplementedError(
-            "Transformer3DModel forward pending — "
-            "see wiki/see-through-porting.md"
+            "Transformer3DModel forward pending — see wiki/see-through-porting.md"
         )
 
 
@@ -153,6 +150,5 @@ class UNetBlock2D:
     ) -> tuple[MLXArray, list[MLXArray]]:
         """Returns (output, residual_hidden_states_for_upsample)."""
         raise NotImplementedError(
-            "UNetBlock2D forward pending — "
-            "see wiki/see-through-porting.md"
+            "UNetBlock2D forward pending — see wiki/see-through-porting.md"
         )

@@ -219,9 +219,7 @@ class TestDPMSolverStep:
 
 class TestDPMSolverMultistep:
     def test_init_builds_sigmas(self) -> None:
-        sampler = DPMSolverMultistep(
-            config=DiffusionConfig(), num_inference_steps=30
-        )
+        sampler = DPMSolverMultistep(config=DiffusionConfig(), num_inference_steps=30)
         assert sampler.sigmas.shape == (31,)
         assert sampler.sigmas[-1] == 0.0
 
@@ -232,18 +230,14 @@ class TestDPMSolverMultistep:
 
     def test_roundtrip_run(self) -> None:
         """전체 루프를 eps=0 + noise=0으로 돌려본다 (수렴 경로만 검증)."""
-        sampler = DPMSolverMultistep(
-            config=DiffusionConfig(), num_inference_steps=10
-        )
+        sampler = DPMSolverMultistep(config=DiffusionConfig(), num_inference_steps=10)
         x = np.random.randn(1, 4, 8, 8).astype(np.float32)
         state = sampler.initial_state()
         for i in range(len(sampler.sigmas) - 1):
             sigma = float(sampler.sigmas[i])
             sigma_next = float(sampler.sigmas[i + 1])
             eps = np.zeros_like(x)
-            x = sampler.step(
-                eps, x, sigma, sigma_next, state, noise=np.zeros_like(x)
-            )
+            x = sampler.step(eps, x, sigma, sigma_next, state, noise=np.zeros_like(x))
         # 최종 step 이후 last_denoised는 존재해야 함
         assert state.last_denoised is not None
         assert len(state.sigma_history) == len(sampler.sigmas) - 1

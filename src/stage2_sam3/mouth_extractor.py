@@ -1,20 +1,17 @@
-"""SAM3 기반 입(mouth) 영역 추출.
+"""SAM3 기반 입(mouth) 영역 추출 — text prompt 방식.
 
-See-Through의 mouth 레이어는 정밀도가 낮은 경우가 많다.
-이 모듈은 사용자가 별도로 제공한 '열린 입' 이미지와 원본의 '닫힌 입'에서
-각각 SAM3으로 마스크를 추출해 Stage 3 RIFE의 입력 쌍을 만든다.
-
-TODO(stage2): text prompt 기반으로 리팩토링 (neck_extractor.py의 TODO 참조).
-PachiPakuGen은 `prompt="mouth"`로 SAM3 Sam3Processor를 호출한다.
+Stage 3 RIFE의 '닫힌 입'/'열린 입' 쌍을 만들기 위해 원본 이미지와
+사용자가 제공한 '열린 입' 이미지에서 각각 mouth 마스크를 추출한다.
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from src.common.config import Stage2Config
 from src.common.logging import get_logger
+from src.stage2_sam3.sam3_backend import Sam3TextExtractor
 
 if TYPE_CHECKING:
     import numpy as np
@@ -24,81 +21,39 @@ logger = get_logger(__name__)
 
 @dataclass(slots=True)
 class MouthExtractor:
-    """SAM3 wrapper for mouth region extraction."""
+    """Text-prompt based mouth mask extractor."""
 
     config: Stage2Config
-    _predictor: Any = field(default=None, init=False, repr=False)
+    _backend: Sam3TextExtractor | None = field(default=None, init=False, repr=False)
 
-    def _ensure_loaded(self) -> None:
-        if self._predictor is not None:
-            return
+    def _backend_or_build(self) -> Sam3TextExtractor:
+        if self._backend is None:
+            self._backend = Sam3TextExtractor(config=self.config)
+        return self._backend
 
-        try:
-            from segment_anything_3 import SAM3, SamPredictor  # type: ignore
-        except ImportError as e:
-            raise ImportError(
-                "segment_anything_3 not installed. Run:\n"
-                "  pip install git+https://github.com/"
-                "facebookresearch/segment-anything-3.git"
-            ) from e
+    def inject_backend(self, backend: Sam3TextExtractor) -> None:
+        """Override the backend (used by tests)."""
+        self._backend = backend
 
-        weights = self.config.sam3_weights
-        if not weights.exists():
-            raise FileNotFoundError(f"SAM3 weights not found: {weights}")
-
-        logger.info(f"Loading SAM3 from {weights}")
-        model = SAM3()
-        model.load_weights(str(weights))
-        self._predictor = SamPredictor(model)
+    def extract(self, image: np.ndarray) -> np.ndarray:
+        """Extract mouth mask from a single RGB image."""
+        return self._backend_or_build().extract_named(image, "mouth")
 
     def extract_pair(
         self,
         closed_image: np.ndarray,
         open_image: np.ndarray,
-        closed_point: tuple[int, int] | None = None,
-        open_point: tuple[int, int] | None = None,
     ) -> tuple[np.ndarray, np.ndarray]:
-        """닫힌 입 / 열린 입 한 쌍의 마스크 추출.
+        """Extract (closed_mouth_mask, open_mouth_mask) pair.
 
         Args:
-            closed_image: HxWx3 원본 이미지 (닫힌 입).
-            open_image: HxWx3 사용자 제공 이미지 (열린 입).
-            closed_point: 닫힌 입 위치 힌트 (x, y).
-            open_point: 열린 입 위치 힌트 (x, y).
+            closed_image: HxWx3 uint8 — original input (mouth closed).
+            open_image: HxWx3 uint8 — user-supplied image with mouth open.
 
         Returns:
-            (closed_mask, open_mask) — 둘 다 HxW bool.
+            Two HxW uint8 (0..255) masks.
         """
-        closed = self._extract_single(closed_image, closed_point)
-        opened = self._extract_single(open_image, open_point)
+        backend = self._backend_or_build()
+        closed = backend.extract_named(closed_image, "mouth")
+        opened = backend.extract_named(open_image, "mouth")
         return closed, opened
-
-    def _extract_single(
-        self,
-        image: np.ndarray,
-        point_hint: tuple[int, int] | None,
-    ) -> np.ndarray:
-        import numpy as np
-
-        self._ensure_loaded()
-        assert self._predictor is not None
-
-        self._predictor.set_image(image)
-        if point_hint is None:
-            point_hint = self._estimate_mouth_point(image)
-
-        masks, scores, _ = self._predictor.predict(
-            point_coords=np.array([point_hint]),
-            point_labels=np.array([1]),
-            multimask_output=self.config.multimask_output,
-        )
-        best: np.ndarray = masks[int(np.argmax(scores))].astype(bool)
-        return best
-
-    def _estimate_mouth_point(self, image: np.ndarray) -> tuple[int, int]:
-        """얼굴 검출 없을 때의 단순 입 위치 추정.
-
-        이미지 중앙 수평, 높이 ~35% 지점을 입으로 가정.
-        """
-        h, w = image.shape[:2]
-        return (w // 2, int(h * 0.35))

@@ -173,9 +173,7 @@ def _load_torch_state_dict(src: Path) -> Mapping[str, object]:
         try:
             import torch
         except ImportError as e:
-            raise ImportError(
-                "torch not installed. Run: pip install torch"
-            ) from e
+            raise ImportError("torch not installed. Run: pip install torch") from e
         loaded: Mapping[str, object] = torch.load(
             str(src), map_location="cpu", weights_only=True
         )
@@ -210,9 +208,7 @@ def convert_state_dict(
         out[new_key] = tensor
         n_mapped += 1
 
-    logger.info(
-        f"Converted {n_mapped} keys, dropped {n_dropped} keys for {component}"
-    )
+    logger.info(f"Converted {n_mapped} keys, dropped {n_dropped} keys for {component}")
     return out
 
 
@@ -243,8 +239,7 @@ def convert_to_mlx(
 
     if dropped:
         logger.warning(
-            f"Dropped {len(dropped)} unrecognised keys. "
-            f"First 5: {dropped[:5]}"
+            f"Dropped {len(dropped)} unrecognised keys. First 5: {dropped[:5]}"
         )
 
     dst.parent.mkdir(parents=True, exist_ok=True)

@@ -23,9 +23,7 @@ class TestRewriteKey:
         assert out == "mid_blocks.0.conv1.weight"
 
     def test_unet_mid_block_attention_to_mid_blocks_1(self) -> None:
-        out = rewrite_key(
-            "mid_block.attentions.0.proj_in.weight", UNET_KEY_MAP
-        )
+        out = rewrite_key("mid_block.attentions.0.proj_in.weight", UNET_KEY_MAP)
         assert out == "mid_blocks.1.proj_in.weight"
 
     def test_unet_mid_block_resnet_1_to_mid_blocks_2(self) -> None:

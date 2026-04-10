@@ -76,8 +76,7 @@ class MarigoldMLX:
         if self._unet is None:
             self.load()
         raise NotImplementedError(
-            "Marigold depth inference pending — "
-            "see wiki/see-through-porting.md"
+            "Marigold depth inference pending — see wiki/see-through-porting.md"
         )
 
     def _build_sampler(self, num_inference_steps: int) -> DPMSolverMultistep:

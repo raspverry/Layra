@@ -43,12 +43,8 @@ class Stage1Pipeline:
     """
 
     config: Stage1Config
-    _layerdiff: LayerDiffuseMLX | None = field(
-        default=None, init=False, repr=False
-    )
-    _marigold: MarigoldMLX | None = field(
-        default=None, init=False, repr=False
-    )
+    _layerdiff: LayerDiffuseMLX | None = field(default=None, init=False, repr=False)
+    _marigold: MarigoldMLX | None = field(default=None, init=False, repr=False)
 
     def load_models(self) -> None:
         """LayerDiffuse와 Marigold 가중치를 MLX로 로드.
@@ -90,8 +86,7 @@ class Stage1Pipeline:
         #   4. MarigoldMLX.predict_depth(image) → per-layer depth ordering
         #   5. LayerSet 생성 (LayerName 매핑은 target_tag_list 기반)
         raise NotImplementedError(
-            "Stage1Pipeline.decompose pending — "
-            "see wiki/see-through-porting.md"
+            "Stage1Pipeline.decompose pending — see wiki/see-through-porting.md"
         )
 
     def __call__(

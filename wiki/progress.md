@@ -41,6 +41,25 @@
   - PachiPakuGen `extract_neck_mask.py` 분석 → SAM3 **text prompt 방식** 발견,
     `sam3-rife.md` 업데이트, `neck_extractor.py`/`mouth_extractor.py`에
     리팩토링 TODO 주석 추가
+- [x] **Phase 1d: Stage 2 text-prompt 리팩토링** (2026-04-10)
+  - `src/stage2_sam3/sam3_backend.py` (new) — `Sam3TextExtractor` +
+    `combine_masks` + `postprocess_mask` + `extract_with_processor` 순수 함수 +
+    `Sam3ProcessorLike` Protocol
+  - `NeckExtractor`/`MouthExtractor`를 Sam3TextExtractor 래퍼로 리팩토링
+    (composition). `extract()` 기본 경로는 text prompt.
+  - Legacy point-based API는 `NeckExtractor.extract_from_point`로만 보존
+  - `Stage2Config` 확장:
+    - `confidence_threshold=0.3` (PachiPakuGen 기본값)
+    - `text_prompts` dict (기본: neck/mouth/eye)
+    - `postprocess_dilate_iterations=2`, `postprocess_blur_kernel=7`
+    - `bpe_path: Path | None` (SAM3 BPE 토크나이저 오버라이드)
+  - 테스트 21개 추가 (`tests/stage2_sam3/`):
+    - `MockSam3Processor`로 Sam3ProcessorLike protocol 구현
+    - combine_masks / postprocess_mask 수식 검증
+    - extract_with_processor 호출 시퀀스 검증
+    - NeckExtractor/MouthExtractor end-to-end (SAM3 없이)
+  - **`make ci`: 95/95 pytest, 0 mypy errors, 34 source files**
+  - 맥북 도착 시 SAM3 weights만 있으면 lazy load로 바로 동작
 - [x] **Phase 1c: MLX 포팅 템플릿 프리뷰** (2026-04-10)
   - MLX SD 예제(`unet.py`, `vae.py`, `sampler.py`, `config.py`)를 WebFetch로
     상세 정독 → 정확한 class/__init__/config 시그니처 확보

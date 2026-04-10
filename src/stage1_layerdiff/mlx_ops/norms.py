@@ -17,9 +17,7 @@ def _require_mlx() -> None:
     try:
         import mlx  # noqa: F401
     except ImportError as e:
-        raise RuntimeError(
-            "MLX is required. pip install mlx on Apple Silicon."
-        ) from e
+        raise RuntimeError("MLX is required. pip install mlx on Apple Silicon.") from e
 
 
 class AdaLayerNormSingle:
@@ -58,6 +56,5 @@ class AdaLayerNormSingle:
         mod_params: shape `(batch, 6 * embedding_dim)`.
         """
         raise NotImplementedError(
-            "AdaLayerNormSingle forward pending — "
-            "see wiki/see-through-porting.md"
+            "AdaLayerNormSingle forward pending — see wiki/see-through-porting.md"
         )

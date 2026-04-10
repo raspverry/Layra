@@ -45,7 +45,9 @@ def make_betas(config: DiffusionConfig) -> np.ndarray:
     """
     if config.beta_schedule == "linear":
         return np.linspace(
-            config.beta_start, config.beta_end, config.num_train_steps,
+            config.beta_start,
+            config.beta_end,
+            config.num_train_steps,
             dtype=np.float64,
         )
     if config.beta_schedule == "scaled_linear":
@@ -245,6 +247,4 @@ class DPMSolverMultistep:
         *,
         noise: np.ndarray | None = None,
     ) -> np.ndarray:
-        return dpmpp_2m_sde_step(
-            eps_pred, x_t, sigma, sigma_next, state, noise=noise
-        )
+        return dpmpp_2m_sde_step(eps_pred, x_t, sigma, sigma_next, state, noise=noise)

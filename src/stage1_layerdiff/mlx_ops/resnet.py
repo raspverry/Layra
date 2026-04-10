@@ -14,9 +14,7 @@ def _require_mlx() -> None:
     try:
         import mlx  # noqa: F401
     except ImportError as e:
-        raise RuntimeError(
-            "MLX is required. pip install mlx on Apple Silicon."
-        ) from e
+        raise RuntimeError("MLX is required. pip install mlx on Apple Silicon.") from e
 
 
 class ResnetBlock2D:
@@ -61,6 +59,5 @@ class ResnetBlock2D:
     ) -> MLXArray:
         """x: `(B, C_in, H, W)` → `(B, C_out, H, W)`."""
         raise NotImplementedError(
-            "ResnetBlock2D forward pending — "
-            "see wiki/see-through-porting.md"
+            "ResnetBlock2D forward pending — see wiki/see-through-porting.md"
         )
