@@ -22,11 +22,11 @@ logger = get_logger(__name__)
 class BodyParts:
     """Stage 2가 조작할 대상 파트."""
 
-    body: "np.ndarray | None"
-    hair_front: "np.ndarray | None"
-    hair_back: "np.ndarray | None"
-    mouth: "np.ndarray | None"
-    neck: "np.ndarray | None"
+    body: np.ndarray | None
+    hair_front: np.ndarray | None
+    hair_back: np.ndarray | None
+    mouth: np.ndarray | None
+    neck: np.ndarray | None
 
 
 def layerset_to_body_parts(layer_set: LayerSet) -> BodyParts:
@@ -67,7 +67,7 @@ def layerset_to_body_parts(layer_set: LayerSet) -> BodyParts:
 
 def extract_body_parts(
     layer_set: LayerSet,
-) -> tuple["np.ndarray | None", "np.ndarray | None", "np.ndarray | None"]:
+) -> tuple[np.ndarray | None, np.ndarray | None, np.ndarray | None]:
     """`layerset_to_body_parts`의 간단한 3-tuple 버전.
 
     Returns:

@@ -3,12 +3,15 @@
 See-Through의 mouth 레이어는 정밀도가 낮은 경우가 많다.
 이 모듈은 사용자가 별도로 제공한 '열린 입' 이미지와 원본의 '닫힌 입'에서
 각각 SAM3으로 마스크를 추출해 Stage 3 RIFE의 입력 쌍을 만든다.
+
+TODO(stage2): text prompt 기반으로 리팩토링 (neck_extractor.py의 TODO 참조).
+PachiPakuGen은 `prompt="mouth"`로 SAM3 Sam3Processor를 호출한다.
 """
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from dataclasses import dataclass, field
+from typing import TYPE_CHECKING, Any
 
 from src.common.config import Stage2Config
 from src.common.logging import get_logger
@@ -24,9 +27,7 @@ class MouthExtractor:
     """SAM3 wrapper for mouth region extraction."""
 
     config: Stage2Config
-
-    def __post_init__(self) -> None:
-        self._predictor = None
+    _predictor: Any = field(default=None, init=False, repr=False)
 
     def _ensure_loaded(self) -> None:
         if self._predictor is not None:
@@ -52,11 +53,11 @@ class MouthExtractor:
 
     def extract_pair(
         self,
-        closed_image: "np.ndarray",
-        open_image: "np.ndarray",
+        closed_image: np.ndarray,
+        open_image: np.ndarray,
         closed_point: tuple[int, int] | None = None,
         open_point: tuple[int, int] | None = None,
-    ) -> tuple["np.ndarray", "np.ndarray"]:
+    ) -> tuple[np.ndarray, np.ndarray]:
         """닫힌 입 / 열린 입 한 쌍의 마스크 추출.
 
         Args:
@@ -74,9 +75,9 @@ class MouthExtractor:
 
     def _extract_single(
         self,
-        image: "np.ndarray",
+        image: np.ndarray,
         point_hint: tuple[int, int] | None,
-    ) -> "np.ndarray":
+    ) -> np.ndarray:
         import numpy as np
 
         self._ensure_loaded()
@@ -91,11 +92,10 @@ class MouthExtractor:
             point_labels=np.array([1]),
             multimask_output=self.config.multimask_output,
         )
-        return masks[int(np.argmax(scores))].astype(bool)
+        best: np.ndarray = masks[int(np.argmax(scores))].astype(bool)
+        return best
 
-    def _estimate_mouth_point(
-        self, image: "np.ndarray"
-    ) -> tuple[int, int]:
+    def _estimate_mouth_point(self, image: np.ndarray) -> tuple[int, int]:
         """얼굴 검출 없을 때의 단순 입 위치 추정.
 
         이미지 중앙 수평, 높이 ~35% 지점을 입으로 가정.

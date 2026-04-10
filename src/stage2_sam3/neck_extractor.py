@@ -6,13 +6,30 @@ See-Through의 neck 레이어는 outpainting으로 생성되어 경계가 부자
 
 SAM3 로드는 lazy하게 하여 Stage 2가 로드되는 것만으로는
 3.2GB 체크포인트를 읽지 않도록 한다.
+
+TODO(stage2): PachiPakuGen extract_neck_mask.py 분석 결과, SAM3는
+text prompt 방식(`Sam3Processor.set_text_prompt`)을 사용하는 것이 더 강력하다.
+맥북 도착 후 실제 SAM3 실행할 때 아래로 리팩토링 예정:
+
+    from sam3 import build_sam3_image_model
+    from sam3.model.sam3_image_processor import Sam3Processor
+
+    model = build_sam3_image_model(
+        checkpoint_path=..., device="mps", eval_mode=True)
+    processor = Sam3Processor(model, confidence_threshold=0.3)
+    state = processor.set_image(image)
+    state = processor.set_text_prompt(state=state, prompt="neck")
+    mask = state["masks"][0]
+    # postprocess: dilate 2회 + Gaussian blur 7x7
+
+현재 point-based 구현은 fallback으로 유지.
 """
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from src.common.config import Stage2Config
 from src.common.logging import get_logger
@@ -28,9 +45,7 @@ class NeckExtractor:
     """SAM3 wrapper for neck region extraction."""
 
     config: Stage2Config
-
-    def __post_init__(self) -> None:
-        self._predictor = None
+    _predictor: Any = field(default=None, init=False, repr=False)
 
     def _ensure_loaded(self) -> None:
         """SAM3 모델을 최초 호출 시 로드."""
@@ -63,9 +78,9 @@ class NeckExtractor:
 
     def extract(
         self,
-        original_image: "np.ndarray",
+        original_image: np.ndarray,
         point_hint: tuple[int, int] | None = None,
-    ) -> "np.ndarray":
+    ) -> np.ndarray:
         """원본 이미지에서 목 영역 마스크를 추출.
 
         Args:
@@ -91,12 +106,10 @@ class NeckExtractor:
             point_labels=np.array([1]),
             multimask_output=self.config.multimask_output,
         )
-        best = masks[int(np.argmax(scores))]
-        return best.astype(bool)
+        best: np.ndarray = masks[int(np.argmax(scores))].astype(bool)
+        return best
 
-    def _estimate_neck_point(
-        self, image: "np.ndarray"
-    ) -> tuple[int, int]:
+    def _estimate_neck_point(self, image: np.ndarray) -> tuple[int, int]:
         """얼굴 bbox가 없을 때의 단순 목 위치 추정.
 
         전신 포트레이트 일러스트 기준, 이미지 높이의 약 45% 지점을
@@ -106,11 +119,11 @@ class NeckExtractor:
         return (w // 2, int(h * self.config.neck_point_ratio_y))
 
 
-def save_mask(mask: "np.ndarray", path: Path) -> None:
+def save_mask(mask: np.ndarray, path: Path) -> None:
     """바이너리 마스크를 8-bit PNG로 저장 (디버깅용)."""
     import numpy as np
     from PIL import Image
 
     path.parent.mkdir(parents=True, exist_ok=True)
-    arr = (mask.astype(np.uint8) * 255)
+    arr = mask.astype(np.uint8) * 255
     Image.fromarray(arr, mode="L").save(path)

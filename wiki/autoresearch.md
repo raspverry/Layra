@@ -54,9 +54,32 @@ Karpathy의 autoresearch 방법론 적용:
 메트릭: test_images/ 의 5개 이미지 평균 처리 시간 (초)
 범위: src/stage1_layerdiff/inference.py 의 파라미터만
 한 번에 하나씩 변경하고, 개선되면 keep 아니면 revert
-experiments/results/speed_optimization.tsv 에 기록
+experiments/results/speed_optimization/results.tsv 에 기록
 목표: 60초 이하"
 ```
+
+### bench 러너 사용법
+
+`scripts/bench.py`가 autoresearch 측정을 자동화한다:
+
+```bash
+# Stage 1 baseline (experiments/test_images/*.png 전부 사용)
+python scripts/bench.py stage1 \
+    --experiment-id baseline \
+    --parameter-changed baseline \
+    --notes "initial M5 Pro run"
+
+# 파라미터 변경 후 재측정 — status는 자동으로 keep/revert 결정됨
+python scripts/bench.py stage1 \
+    --experiment-id exp-001 \
+    --parameter-changed num_inference_steps --value 20 \
+    --notes "try 20 steps instead of 30"
+```
+
+bench는 파일마다 warmup + 3회 반복 후 median을 기록하고,
+직전 baseline/keep 레코드와 비교해 delta까지 같은 TSV에 쓴다.
+실패(NotImplementedError 포함)는 `status=fail`로 기록되어
+맥북 없이도 인프라 검증 가능.
 
 ### 품질 최적화 루프
 

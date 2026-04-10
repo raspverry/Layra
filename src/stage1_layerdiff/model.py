@@ -16,8 +16,9 @@ See-Through: SDXL 기반 LayerDiffuse로 학습된 레이어 분해 모델.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
+from typing import Any
 
 
 @dataclass(slots=True)
@@ -26,11 +27,9 @@ class LayerDiffuseMLX:
 
     weights_path: Path
     dtype: str = "bfloat16"
-
-    def __post_init__(self) -> None:
-        self._unet = None
-        self._vae = None
-        self._text_encoder = None
+    _unet: Any = field(default=None, init=False, repr=False)
+    _vae: Any = field(default=None, init=False, repr=False)
+    _text_encoder: Any = field(default=None, init=False, repr=False)
 
     def load(self) -> None:
         """MLX 가중치를 메모리에 올린다.
@@ -46,10 +45,10 @@ class LayerDiffuseMLX:
 
     def sample(
         self,
-        conditioning: "object",
+        conditioning: object,
         num_steps: int,
         guidance_scale: float,
-    ) -> "object":
+    ) -> object:
         """Diffusion sampling loop.
 
         Args:

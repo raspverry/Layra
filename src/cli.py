@@ -102,8 +102,7 @@ def stage2(
         open_mouth_image=open_mouth,
     )
     typer.echo(
-        f"Stage 2 done: {result.body_png.parent} "
-        f"({result.elapsed_seconds:.1f}s)"
+        f"Stage 2 done: {result.body_png.parent} ({result.elapsed_seconds:.1f}s)"
     )
 
 
@@ -144,8 +143,7 @@ def stage3(
     )
     result = run_stage3(inputs=inputs, output_dir=output_dir)
     typer.echo(
-        f"Stage 3 done: {result.eye_frames_dir.parent} "
-        f"({result.elapsed_seconds:.1f}s)"
+        f"Stage 3 done: {result.eye_frames_dir.parent} ({result.elapsed_seconds:.1f}s)"
     )
 
 

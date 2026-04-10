@@ -16,8 +16,8 @@ logger = get_logger(__name__)
 
 
 def generate_eye_blink_frames(
-    eye_open: "np.ndarray",
-    eye_closed: "np.ndarray",
+    eye_open: np.ndarray,
+    eye_closed: np.ndarray,
     output_dir: Path,
     interpolator: RIFEInterpolator,
     n_frames: int = 8,

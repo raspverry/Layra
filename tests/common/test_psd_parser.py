@@ -8,7 +8,8 @@ from src.stage2_sam3.psd_parser import extract_body_parts, layerset_to_body_part
 
 class TestLayersetToBodyParts:
     def test_all_parts_present(
-        self, dummy_rgba_64x48  # type: ignore[no-untyped-def]
+        self,
+        dummy_rgba_64x48,  # type: ignore[no-untyped-def]
     ) -> None:
         import numpy as np
 
@@ -38,7 +39,8 @@ class TestLayersetToBodyParts:
         assert parts.neck is None
 
     def test_extract_body_parts_tuple(
-        self, dummy_rgba_64x48  # type: ignore[no-untyped-def]
+        self,
+        dummy_rgba_64x48,  # type: ignore[no-untyped-def]
     ) -> None:
         ls = LayerSet()
         ls.layers[LayerName.BODY] = dummy_rgba_64x48

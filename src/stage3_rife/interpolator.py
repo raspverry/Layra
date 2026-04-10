@@ -34,15 +34,13 @@ class RIFEInterpolator:
             "CPUExecutionProvider",
         ]
     )
-    _session: "object | None" = field(default=None, init=False, repr=False)
+    _session: object | None = field(default=None, init=False, repr=False)
 
     def _ensure_loaded(self) -> None:
         if self._session is not None:
             return
         if not self.model_path.exists():
-            raise FileNotFoundError(
-                f"RIFE ONNX model not found: {self.model_path}"
-            )
+            raise FileNotFoundError(f"RIFE ONNX model not found: {self.model_path}")
 
         import onnxruntime as ort
 
@@ -50,8 +48,7 @@ class RIFEInterpolator:
         selected = [p for p in self.providers if p in available]
         if not selected:
             logger.warning(
-                f"None of {self.providers} available, "
-                f"falling back to {available}"
+                f"None of {self.providers} available, falling back to {available}"
             )
             selected = available
 
@@ -63,10 +60,10 @@ class RIFEInterpolator:
 
     def interpolate(
         self,
-        frame_start: "np.ndarray",
-        frame_end: "np.ndarray",
+        frame_start: np.ndarray,
+        frame_end: np.ndarray,
         n_frames: int = 8,
-    ) -> list["np.ndarray"]:
+    ) -> list[np.ndarray]:
         """두 프레임 사이 N개의 중간 프레임 생성.
 
         Args:
@@ -81,7 +78,7 @@ class RIFEInterpolator:
             raise ValueError(f"n_frames must be >= 2, got {n_frames}")
 
         self._ensure_loaded()
-        frames: list["np.ndarray"] = [frame_start]
+        frames: list[np.ndarray] = [frame_start]
         for i in range(1, n_frames - 1):
             t = i / (n_frames - 1)
             mid = self._interpolate_single(frame_start, frame_end, t)
@@ -91,10 +88,10 @@ class RIFEInterpolator:
 
     def _interpolate_single(
         self,
-        img0: "np.ndarray",
-        img1: "np.ndarray",
+        img0: np.ndarray,
+        img1: np.ndarray,
         timestep: float,
-    ) -> "np.ndarray":
+    ) -> np.ndarray:
         import numpy as np
 
         assert self._session is not None
@@ -105,14 +102,15 @@ class RIFEInterpolator:
         }
         # 일부 RIFE ONNX 변형은 timestep 입력이 없을 수 있음.
         session_inputs = {
-            i.name for i in self._session.get_inputs()  # type: ignore
+            i.name
+            for i in self._session.get_inputs()  # type: ignore
         }
         inputs = {k: v for k, v in inputs.items() if k in session_inputs}
         output = self._session.run(None, inputs)  # type: ignore
         return self._postprocess(output[0])
 
     @staticmethod
-    def _preprocess(img: "np.ndarray") -> "np.ndarray":
+    def _preprocess(img: np.ndarray) -> np.ndarray:
         """HxWxC uint8 → 1xCxHxW float32 (0~1)."""
         import numpy as np
 
@@ -120,9 +118,10 @@ class RIFEInterpolator:
         return arr.transpose(2, 0, 1)[np.newaxis]
 
     @staticmethod
-    def _postprocess(output: "np.ndarray") -> "np.ndarray":
+    def _postprocess(output: np.ndarray) -> np.ndarray:
         """1xCxHxW float32 (0~1) → HxWxC uint8."""
         import numpy as np
 
         arr = output[0].transpose(1, 2, 0)
-        return (arr * 255.0).clip(0, 255).astype(np.uint8)
+        result: np.ndarray = (arr * 255.0).clip(0, 255).astype(np.uint8)
+        return result

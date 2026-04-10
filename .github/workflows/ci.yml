@@ -1,0 +1,62 @@
+name: CI
+
+on:
+  push:
+    branches: [main, 'claude/**']
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ci:
+    name: lint + typecheck + test-fast
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          version: "latest"
+          enable-cache: true
+
+      - name: Create virtualenv
+        run: uv venv --python 3.12 .venv
+
+      - name: Install Layra with dev extras
+        run: |
+          uv pip install --python .venv/bin/python --editable ".[dev]"
+
+      - name: Ruff lint
+        run: .venv/bin/ruff check src tests
+
+      - name: Ruff format check
+        run: .venv/bin/ruff format --check src tests
+
+      - name: Mypy typecheck
+        run: .venv/bin/mypy src
+
+      - name: Pytest (fast subset)
+        run: |
+          .venv/bin/pytest \
+            -m "not slow and not mlx and not sam3 and not rife" \
+            --cov=src --cov-report=term-missing --cov-report=xml
+
+      - name: Upload coverage XML
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-xml
+          path: coverage.xml
+          if-no-files-found: ignore

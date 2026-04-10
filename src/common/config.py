@@ -114,7 +114,7 @@ class LayraConfig(BaseModel):
     stage2: Stage2Config = Field(default_factory=Stage2Config)
     stage3: Stage3Config = Field(default_factory=Stage3Config)
 
-    def resolve_paths(self) -> "LayraConfig":
+    def resolve_paths(self) -> LayraConfig:
         """상대 경로들을 project_root 기준 절대 경로로 변환한다."""
         root = self.project_root
 

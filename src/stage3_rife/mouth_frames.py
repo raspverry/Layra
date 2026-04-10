@@ -23,8 +23,8 @@ VOWELS: tuple[str, ...] = ("a", "i", "u", "e", "o")
 
 
 def generate_mouth_frames(
-    mouth_closed: "np.ndarray",
-    mouth_shapes: dict[str, "np.ndarray"],
+    mouth_closed: np.ndarray,
+    mouth_shapes: dict[str, np.ndarray],
     output_dir: Path,
     interpolator: RIFEInterpolator,
     n_frames: int = 8,
@@ -53,9 +53,7 @@ def generate_mouth_frames(
         vowel_dir = output_dir / f"mouth_{vowel}"
         vowel_dir.mkdir(parents=True, exist_ok=True)
 
-        frames = interpolator.interpolate(
-            mouth_closed, mouth_shapes[vowel], n_frames
-        )
+        frames = interpolator.interpolate(mouth_closed, mouth_shapes[vowel], n_frames)
         paths: list[Path] = []
         for idx, frame in enumerate(frames, start=1):
             out = vowel_dir / f"frame_{idx:03d}.png"

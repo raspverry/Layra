@@ -13,7 +13,7 @@ if TYPE_CHECKING:
     import numpy as np
 
 
-def load_rgba(path: Path | str) -> "np.ndarray":
+def load_rgba(path: Path | str) -> np.ndarray:
     """이미지를 RGBA 형식으로 로드.
 
     Args:
@@ -36,7 +36,7 @@ def load_rgba(path: Path | str) -> "np.ndarray":
     return np.asarray(img, dtype=np.uint8)
 
 
-def load_rgb(path: Path | str) -> "np.ndarray":
+def load_rgb(path: Path | str) -> np.ndarray:
     """이미지를 RGB 형식으로 로드 (알파 무시).
 
     Args:
@@ -56,7 +56,7 @@ def load_rgb(path: Path | str) -> "np.ndarray":
     return np.asarray(img, dtype=np.uint8)
 
 
-def save_rgba(array: "np.ndarray", path: Path | str) -> None:
+def save_rgba(array: np.ndarray, path: Path | str) -> None:
     """HxWx4 uint8 배열을 PNG로 저장.
 
     Args:
@@ -79,7 +79,7 @@ def save_rgba(array: "np.ndarray", path: Path | str) -> None:
     Image.fromarray(array, mode="RGBA").save(p)
 
 
-def save_rgb(array: "np.ndarray", path: Path | str) -> None:
+def save_rgb(array: np.ndarray, path: Path | str) -> None:
     """HxWx3 uint8 배열을 PNG/JPG로 저장."""
     import numpy as np
     from PIL import Image
@@ -94,7 +94,7 @@ def save_rgb(array: "np.ndarray", path: Path | str) -> None:
     Image.fromarray(array, mode="RGB").save(p)
 
 
-def compute_iou(mask_a: "np.ndarray", mask_b: "np.ndarray") -> float:
+def compute_iou(mask_a: np.ndarray, mask_b: np.ndarray) -> float:
     """두 바이너리 마스크 간 Intersection-over-Union.
 
     포팅 검증 (Stage 1 CUDA vs MLX) 및 SAM3 품질 평가에 사용.

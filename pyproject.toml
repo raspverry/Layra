@@ -127,13 +127,18 @@ exclude = ["experiments/", "models/", "build/", "dist/"]
 
 [[tool.mypy.overrides]]
 module = [
+    "mlx",
     "mlx.*",
+    "psd_tools",
     "psd_tools.*",
+    "segment_anything_3",
     "segment_anything_3.*",
-    "onnxruntime.*",
     "cv2",
 ]
 ignore_missing_imports = true
+# Note: mypy may print "unused section" for modules not currently imported
+# by the codebase. That is expected — these entries exist so that future
+# imports (especially mlx on Darwin/arm64) don't fail type-checking.
 
 # ============================================================
 # pytest

@@ -57,18 +57,14 @@ class TestSaveLoadRoundTrip:
 
 
 class TestValidation:
-    def test_save_rgba_rejects_wrong_shape(
-        self, tmp_out_dir: Path
-    ) -> None:
+    def test_save_rgba_rejects_wrong_shape(self, tmp_out_dir: Path) -> None:
         import numpy as np
 
         bad = np.zeros((10, 10, 3), dtype=np.uint8)  # RGB not RGBA
         with pytest.raises(ValueError, match="HxWx4"):
             save_rgba(bad, tmp_out_dir / "x.png")
 
-    def test_save_rgba_rejects_wrong_dtype(
-        self, tmp_out_dir: Path
-    ) -> None:
+    def test_save_rgba_rejects_wrong_dtype(self, tmp_out_dir: Path) -> None:
         import numpy as np
 
         bad = np.zeros((10, 10, 4), dtype=np.float32)

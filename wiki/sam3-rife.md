@@ -8,10 +8,51 @@
 
 레포: https://github.com/kazuya-bros/PachiPakuGen  
 라이선스: MIT  
-스택: Tauri (Rust) + Vite/TypeScript + Python scripts  
+스택: Tauri (Rust) + Vite/TypeScript + **Python 5.7% (1 script)**  
 주의: 원본은 Windows + DirectML 전용, SpriTalk 전용 출력
 
 우리는 **로직만 참조**하고 독자 구현.
+
+### PachiPakuGen Python 코드 실제 분석 (2026-04-10)
+
+`scripts/extract_neck_mask.py` (유일한 Python 파일) 분석 결과:
+
+```python
+import sam3
+from sam3 import build_sam3_image_model
+from sam3.model.sam3_image_processor import Sam3Processor
+
+model = build_sam3_image_model(
+    bpe_path=bpe_path,
+    device=device,
+    eval_mode=True,
+    checkpoint_path=str(checkpoint_path),
+    load_from_HF=False,
+)
+processor = Sam3Processor(model, confidence_threshold=0.3)
+```
+
+**핵심 차이점 — SAM3은 text prompt로 사용**:
+
+```python
+state = processor.set_image(image)
+processor.reset_all_prompts(state)
+state = processor.set_text_prompt(state=state, prompt="eye,mouth")
+masks = state["masks"]  # or state["pred_masks"]
+```
+
+- 점 좌표나 박스가 아닌 **자연어 텍스트** (`"eye,mouth"`)
+- confidence_threshold 0.3
+- 마스크 후처리: `dilate` 2회 + Gaussian blur 7×7 → 경계선 매끄럽게
+
+**우리 구현 영향**:
+현재 `src/stage2_sam3/neck_extractor.py`와 `mouth_extractor.py`는
+점 좌표 방식으로 작성되어 있지만, text prompt 방식이 더 강력하다.
+맥북 도착 후 SAM3 실제 실행할 때 `set_text_prompt(...)` 방식으로
+리팩토링 예정. 점 좌표는 fallback으로만 유지.
+
+나머지(PSD 파싱, RIFE)는 Rust 크레이트로 구현되어 있어
+Python 참조 불가 — 우리 구현은 psd-tools + onnxruntime 기반.
 
 ---
 

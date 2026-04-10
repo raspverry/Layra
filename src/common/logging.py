@@ -59,7 +59,7 @@ def setup_logging(
     _CONFIGURED = True
 
 
-def get_logger(name: str) -> "Logger":
+def get_logger(name: str) -> Logger:
     """모듈 이름을 bind한 logger 반환."""
     from loguru import logger
 

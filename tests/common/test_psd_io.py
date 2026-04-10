@@ -1,9 +1,7 @@
 """src/common/psd_io.py 테스트.
 
-`psd_tools`는 from-scratch PSD 저장 기능이 제한적이라
-현재 `write_psd`는 플랫 PSD를 Pillow로 저장한다 (psd_io.py 내 TODO 참조).
-이 테스트는 라운드트립보다는 alpha composite 헬퍼의 수학적 정확성과
-write_psd가 오류 없이 파일을 만드는지만 검증한다.
+`write_psd`는 psd_tools 1.14+의 `PSDImage.new` + `create_pixel_layer`로
+per-layer PSD를 작성하며, `parse_psd`와 round-trip 가능하다.
 """
 
 from __future__ import annotations
@@ -12,7 +10,7 @@ from pathlib import Path
 
 import pytest
 
-from src.common.psd_io import _alpha_composite, write_psd
+from src.common.psd_io import _alpha_composite, parse_psd, write_psd
 from src.common.types import LayerName, LayerSet
 
 
@@ -97,3 +95,32 @@ class TestWritePSD:
         out = tmp_out_dir / "multi.psd"
         write_psd(ls, out)
         assert out.exists()
+
+
+class TestPSDRoundTrip:
+    def test_roundtrip_preserves_layer_names(
+        self,
+        tmp_out_dir: Path,
+        dummy_rgba_64x48,  # type: ignore[no-untyped-def]
+    ) -> None:
+        """write_psd → parse_psd 후 레이어 이름과 순서가 보존되어야 한다."""
+        import numpy as np
+
+        ls = LayerSet()
+        ls.layers[LayerName.BODY] = dummy_rgba_64x48
+        hair = np.zeros_like(dummy_rgba_64x48)
+        hair[:20, :, 2] = 255
+        hair[:20, :, 3] = 255
+        ls.layers[LayerName.HAIR_FRONT] = hair
+        ls.drawing_order = [LayerName.BODY, LayerName.HAIR_FRONT]
+
+        out = tmp_out_dir / "roundtrip.psd"
+        write_psd(ls, out)
+
+        parsed = parse_psd(out)
+        assert LayerName.BODY in parsed
+        assert LayerName.HAIR_FRONT in parsed
+        assert len(parsed) == 2
+        # 형상과 dtype이 일치하는지
+        assert parsed.get(LayerName.BODY).shape == dummy_rgba_64x48.shape  # type: ignore[union-attr]
+        assert parsed.get(LayerName.BODY).dtype == np.uint8  # type: ignore[union-attr]

@@ -9,8 +9,9 @@ See-Through에서는 fine-tuned Marigold를 사용해
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
+from typing import Any
 
 
 @dataclass(slots=True)
@@ -19,10 +20,8 @@ class MarigoldMLX:
 
     weights_path: Path
     dtype: str = "bfloat16"
-
-    def __post_init__(self) -> None:
-        self._unet = None
-        self._vae = None
+    _unet: Any = field(default=None, init=False, repr=False)
+    _vae: Any = field(default=None, init=False, repr=False)
 
     def load(self) -> None:
         """Marigold MLX 가중치 로드.
@@ -34,7 +33,7 @@ class MarigoldMLX:
             "Marigold MLX port pending — see wiki/see-through-porting.md"
         )
 
-    def predict_depth(self, image: "object") -> "object":
+    def predict_depth(self, image: object) -> object:
         """단일 이미지에서 depth map 추정.
 
         Args:

@@ -143,12 +143,64 @@ Stable Diffusion 1.5 기반 단안 depth diffusion → MLX SD 예제에서
 | 11 | `MarigoldDepthPipeline` | `src/stage1_layerdiff/marigold.py` | ⭐⭐ | 표준 SD1.5 depth |
 | 12 | `weights.py` — PyTorch state_dict → MLX | 이미 스켈레톤 있음 | ⭐⭐ | key mapping 필요 |
 
-### MLX SD 예제에서 재사용 가능한 부분
+### MLX SD 예제에서 재사용 가능한 부분 (2026-04-10 분석)
 
 https://github.com/ml-explore/mlx-examples/tree/main/stable_diffusion 의
-`unet.py`, `vae.py`, `tokenizer.py`가 직접 참조 대상.
-LayerDiffuse의 SDXL UNet은 MLX SD 예제의 UNet2D에 레이어 차원만 추가한
-형태로 볼 수 있다.
+`stable_diffusion/` 패키지를 정독한 결과:
+
+```
+stable_diffusion/
+├── unet.py         # UNetModel + UNetBlock2D + Transformer2D + ResnetBlock2D
+├── vae.py          # Autoencoder
+├── clip.py         # Text encoder (CLIP)
+├── tokenizer.py    # BPE tokenizer
+├── sampler.py      # Diffusion sampler
+├── model_io.py     # Weight loading utilities
+└── config.py       # Dataclass configs
+```
+
+**MLX UNet 클래스 구조** (unet.py):
+
+| MLX 클래스 | 역할 | diffusers 대응 |
+|-----------|------|----------------|
+| `UNetModel(nn.Module)` | UNet 본체 | `UNet2DConditionModel` |
+| `UNetBlock2D(nn.Module)` | down/up 블록 | `CrossAttnDownBlock2D`/`CrossAttnUpBlock2D` |
+| `ResnetBlock2D(nn.Module)` | residual | `ResnetBlock2D` |
+| `Transformer2D(nn.Module)` | attention 그룹 | `Transformer2DModel` |
+| `TransformerBlock(nn.Module)` | 단일 TF 블록 | `BasicTransformerBlock` |
+| `TimestepEmbedding(nn.Module)` | time 임베딩 | `Timesteps + TimestepEmbedding` |
+
+**`UNetModel.__call__` 시그니처**:
+```python
+def __call__(self, x, timestep, encoder_x,
+             attn_mask=None, encoder_attn_mask=None, text_time=None):
+```
+- `x`: latent `(B, C, H, W)`
+- `timestep`: diffusion step
+- `encoder_x`: text embedding
+- `text_time`: pooled embedding (SDXL micro-conditioning)
+
+**사용 레이어** (전부 `mlx.nn`):
+`Conv2d`, `GroupNorm`, `LayerNorm`, `Linear`,
+`SinusoidalPositionalEncoding`, `MultiHeadAttention`
+(cross-attn은 `key_input_dims` 분리).
+
+**LayerDiffuse 포팅 전략**:
+1. `UNetModel`을 베이스로 복사 → `UNetFrameConditionModel` (추가 차원 `num_frames=23`)
+2. `Transformer2D` → `Transformer3D` (cross-frame attention 추가)
+3. `TransformerBlock` → 그대로 사용, `CrossFrameTransformerBlock` 추가
+4. `TimestepEmbedding`, `ResnetBlock2D`, `UNetBlock2D` — 거의 그대로 사용
+5. `model_io.py`를 참조하여 `weights.py` 작성 (key 매핑만 추가)
+6. `sampler.py`를 참조하여 k-diffusion DPM++ 2M SDE 구현
+7. Marigold: 표준 SD 1.5 기반이라 `UNetModel` 축소 버전으로 충분
+
+**Marigold 구조** (prs-eth/marigold + See-Through fine-tune):
+```
+common/modules/marigold/
+├── marigold_depth_pipeline.py
+└── multi_res_noise.py
+```
+→ MLX SD 예제의 `sampler.py` + `UNetModel` 소수만 수정해서 포팅 가능.
 
 ---
 

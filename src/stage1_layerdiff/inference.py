@@ -15,9 +15,9 @@ See-Through의 inference_psd.py를 MLX로 포팅한 최종 형태가 될 모듈.
 from __future__ import annotations
 
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from src.common.config import Stage1Config, get_config
 from src.common.logging import get_logger
@@ -38,10 +38,8 @@ class Stage1Pipeline:
     """
 
     config: Stage1Config
-
-    def __post_init__(self) -> None:
-        self._layerdiff = None
-        self._marigold = None
+    _layerdiff: Any = field(default=None, init=False, repr=False)
+    _marigold: Any = field(default=None, init=False, repr=False)
 
     def load_models(self) -> None:
         """LayerDiffuse와 Marigold 가중치를 MLX로 로드.
@@ -56,7 +54,7 @@ class Stage1Pipeline:
             "MLX porting pending — see wiki/see-through-porting.md"
         )
 
-    def decompose(self, image: "np.ndarray") -> LayerSet:
+    def decompose(self, image: np.ndarray) -> LayerSet:
         """단일 RGB 이미지 → 레이어 분해.
 
         Args:
@@ -100,9 +98,7 @@ class Stage1Pipeline:
 
         psd_path = write_psd(layer_set, psd_output)
         elapsed = time.perf_counter() - start
-        logger.info(
-            f"Stage 1 done: {len(layer_set)} layers in {elapsed:.1f}s"
-        )
+        logger.info(f"Stage 1 done: {len(layer_set)} layers in {elapsed:.1f}s")
 
         return Stage1Output(
             layer_set=layer_set,

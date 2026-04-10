@@ -10,9 +10,9 @@ from src.stage3_rife.mouth_frames import VOWELS, generate_mouth_frames
 from src.stage3_rife.pipeline import Stage3Pipeline, run_stage3
 
 __all__ = [
+    "VOWELS",
     "RIFEInterpolator",
     "Stage3Pipeline",
-    "VOWELS",
     "generate_eye_blink_frames",
     "generate_mouth_frames",
     "run_stage3",

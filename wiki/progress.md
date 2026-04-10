@@ -27,15 +27,29 @@
   - `tests/common/` pytest 스위트 — types, image_io, psd_io, config, psd_parser
   - WebFetch로 See-Through 원본 코드 정독 → BLOCKER-002 해결
   - `wiki/see-through-porting.md`에 12단계 포팅 맵 작성
+- [x] **Phase 1b: Claude Code 세션 하네스 + 원본 분석 확장** (2026-04-10)
+  - `.claude/hooks/session-start.sh` + `.claude/settings.json` —
+    원격 세션에서 자동으로 uv venv 생성 + `pip install -e .[dev]`
+  - `.github/workflows/ci.yml` — ruff + format + mypy + pytest (fast subset)
+  - `src/common/psd_io.py::write_psd` — 진짜 per-layer PSD writer로 교체
+    (psd-tools `PSDImage.new` + `create_pixel_layer`). `parse_psd`와 round-trip 가능.
+  - `tests/common/test_psd_io.py`에 round-trip 테스트 추가. **32/32 pytest + 0 mypy errors**
+  - dataclass slots 패턴 정리 (`field(default=None, init=False)`)
+  - `scripts/bench.py` — autoresearch 속도 벤치마크 러너 (stage1/2/3 서브커맨드, TSV 기록)
+  - `scripts/prepare_rife.py` — RIFE ONNX 검증/smoke-test 유틸
+  - MLX SD 예제 분석 → `see-through-porting.md`에 MLX 클래스 매핑 표
+  - PachiPakuGen `extract_neck_mask.py` 분석 → SAM3 **text prompt 방식** 발견,
+    `sam3-rife.md` 업데이트, `neck_extractor.py`/`mouth_extractor.py`에
+    리팩토링 TODO 주석 추가
 
 ---
 
 ## 맥북 도착 전 할 것
 
-- [ ] See-Through 코드 전체 정독 (inference_psd.py 중심)
-- [ ] PachiPakuGen scripts/ 디렉토리 정독
-- [ ] LayerDiffuse 원본 코드 정독
-- [ ] Marigold 원본 코드 정독
+- [x] See-Through 코드 전체 정독 (inference_psd.py, transformer3d, inference_utils) — Phase 1a/1b
+- [x] PachiPakuGen scripts/ 디렉토리 정독 — Phase 1b (Python 파일 1개뿐)
+- [ ] LayerDiffuse 원본 코드 정독 (별도 레포, diffusers 모듈과 중복 정독해도 OK)
+- [ ] Marigold 원본 코드 정독 (prs-eth/marigold)
 - [ ] Live2D Cubism 개인 플랜 가입
 - [ ] RunPod 계정 생성
 - [ ] RunPod에서 See-Through 원본 실행 (처리 시간, 메모리 기준 확보)

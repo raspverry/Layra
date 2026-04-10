@@ -17,7 +17,7 @@ def tmp_out_dir(tmp_path: Path) -> Iterator[Path]:
 
 
 @pytest.fixture
-def dummy_rgba_64x48() -> "object":
+def dummy_rgba_64x48() -> object:
     """64x48 RGBA 이미지 (왼쪽 절반 빨강, 오른쪽 절반 투명)."""
     import numpy as np
 
@@ -28,7 +28,7 @@ def dummy_rgba_64x48() -> "object":
 
 
 @pytest.fixture
-def dummy_rgb_64x48() -> "object":
+def dummy_rgb_64x48() -> object:
     """64x48 RGB 이미지 (그라디언트)."""
     import numpy as np
 

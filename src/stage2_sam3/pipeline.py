@@ -8,6 +8,7 @@ from __future__ import annotations
 import time
 from dataclasses import dataclass
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from src.common.config import Stage2Config, get_config
 from src.common.image_io import load_rgb, save_rgba
@@ -17,6 +18,9 @@ from src.common.types import Stage2Output
 from src.stage2_sam3.mouth_extractor import MouthExtractor
 from src.stage2_sam3.neck_extractor import NeckExtractor
 from src.stage2_sam3.psd_parser import layerset_to_body_parts
+
+if TYPE_CHECKING:
+    import numpy as np
 
 logger = get_logger(__name__)
 
@@ -46,7 +50,6 @@ class Stage2Pipeline:
         Returns:
             Stage2Output.
         """
-        import numpy as np
 
         start = time.perf_counter()
         output_dir.mkdir(parents=True, exist_ok=True)
@@ -76,9 +79,7 @@ class Stage2Pipeline:
         if open_mouth_image is not None:
             mouth_extractor = MouthExtractor(config=self.config)
             open_rgb = load_rgb(open_mouth_image)
-            closed_mask, open_mask = mouth_extractor.extract_pair(
-                rgb, open_rgb
-            )
+            closed_mask, open_mask = mouth_extractor.extract_pair(rgb, open_rgb)
             closed_rgba = _mask_to_rgba(rgb, closed_mask)
             open_rgba = _mask_to_rgba(open_rgb, open_mask)
 
@@ -100,21 +101,20 @@ class Stage2Pipeline:
         )
 
 
-def _mask_to_rgba(rgb: "object", mask: "object") -> "object":
+def _mask_to_rgba(rgb: np.ndarray, mask: np.ndarray) -> np.ndarray:
     """HxWx3 RGB + HxW bool mask → HxWx4 RGBA."""
     import numpy as np
 
-    rgb_arr = np.asarray(rgb)
-    mask_arr = np.asarray(mask).astype(bool)
-    alpha = (mask_arr.astype(np.uint8) * 255)[..., None]
-    return np.concatenate([rgb_arr, alpha], axis=-1).astype(np.uint8)
+    mask_bool = mask.astype(bool)
+    alpha = (mask_bool.astype(np.uint8) * 255)[..., None]
+    return np.concatenate([rgb, alpha], axis=-1).astype(np.uint8)
 
 
 def _apply_mask_to_rgb(
-    rgb: "object",
-    mask: "object",
-    base: "object | None",
-) -> "object":
+    rgb: np.ndarray,
+    mask: np.ndarray,
+    base: np.ndarray | None,
+) -> np.ndarray:
     """원본 RGB를 SAM3 마스크로 잘라 RGBA 생성.
 
     base가 주어지면 기존 레이어와 합성하여 경계선 보정 효과를 준다.
@@ -126,17 +126,16 @@ def _apply_mask_to_rgb(
     if base is None:
         return cut
 
-    base_arr = np.asarray(base)
-    if base_arr.shape != cut.shape:
+    if base.shape != cut.shape:
         logger.warning(
-            f"Shape mismatch on neck blend: base={base_arr.shape} "
+            f"Shape mismatch on neck blend: base={base.shape} "
             f"vs cut={cut.shape} — falling back to raw cut"
         )
         return cut
 
     # 마스크 영역은 cut으로, 나머지는 base 유지.
-    mask_arr = np.asarray(mask).astype(bool)[..., None]
-    out = np.where(mask_arr, cut, base_arr)
+    mask_arr = mask.astype(bool)[..., None]
+    out = np.where(mask_arr, cut, base)
     return out.astype(np.uint8)
 
 
