@@ -41,6 +41,22 @@
   - PachiPakuGen `extract_neck_mask.py` 분석 → SAM3 **text prompt 방식** 발견,
     `sam3-rife.md` 업데이트, `neck_extractor.py`/`mouth_extractor.py`에
     리팩토링 TODO 주석 추가
+- [x] **Phase 1f: Stage 3 파이프라인 통합 테스트 + ADR 정리** (2026-04-10)
+  - `Stage3Pipeline`에 `interpolator: RIFEInterpolatorLike | None` 주입 경로 추가
+    (Stage 2와 동일 패턴, `_get_interpolator()` lazy fallback)
+  - `tests/stage3_rife/test_pipeline.py` — **6개 새 통합 테스트**:
+    - `test_writes_all_frame_directories` — 5모음 × 3 frames + eye × 4 frames
+    - `test_endpoint_frames_match_inputs` — 첫/끝 프레임이 입력과 일치
+    - `test_partial_vowel_map` — 일부 모음만 제공 시 누락 스킵
+    - `test_lazy_build_without_injection_would_call_rife` — 주입 없으면
+      `FileNotFoundError` (lazy RIFE load 경로 검증)
+    - `run_stage3` 래퍼 signature 검증
+  - `wiki/decisions.md`에 **ADR-009 ~ ADR-012** 추가 (4개):
+    - ADR-009: SessionStart hook + uv (sync mode, CLAUDE_CODE_REMOTE 가드)
+    - ADR-010: SAM3 text prompt 방식 (PachiPakuGen 패턴)
+    - ADR-011: Sam3ProcessorLike / RIFEInterpolatorLike Protocol DI
+    - ADR-012: MLX 템플릿의 `MLXArray = Any` 전략
+  - **`make ci`: 121/121 pytest, 0 mypy errors, 34 source files**
 - [x] **Phase 1e: End-to-end 테스트 커버리지 확장** (2026-04-10)
   - `Stage2Pipeline`에 `neck_extractor` / `mouth_extractor` 주입 경로 추가
     (dataclass field로 선택적 DI)

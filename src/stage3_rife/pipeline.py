@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 from src.common.config import Stage3Config, get_config
@@ -11,7 +11,7 @@ from src.common.image_io import load_rgb
 from src.common.logging import get_logger
 from src.common.types import Stage3Output
 from src.stage3_rife.eye_blink import generate_eye_blink_frames
-from src.stage3_rife.interpolator import RIFEInterpolator
+from src.stage3_rife.interpolator import RIFEInterpolator, RIFEInterpolatorLike
 from src.stage3_rife.mouth_frames import VOWELS, generate_mouth_frames
 
 logger = get_logger(__name__)
@@ -29,9 +29,22 @@ class Stage3Inputs:
 
 @dataclass(slots=True)
 class Stage3Pipeline:
-    """RIFE 프레임 보간 파이프라인."""
+    """RIFE 프레임 보간 파이프라인.
+
+    `interpolator`를 주입하면 ONNX 세션 없이 테스트 가능 (mock용).
+    주입하지 않으면 `config.rife_model`로 RIFEInterpolator를 lazy 생성.
+    """
 
     config: Stage3Config
+    interpolator: RIFEInterpolatorLike | None = field(default=None)
+
+    def _get_interpolator(self) -> RIFEInterpolatorLike:
+        if self.interpolator is None:
+            self.interpolator = RIFEInterpolator(
+                model_path=self.config.rife_model,
+                providers=self.config.providers,
+            )
+        return self.interpolator
 
     def __call__(
         self,
@@ -51,10 +64,7 @@ class Stage3Pipeline:
         output_dir.mkdir(parents=True, exist_ok=True)
         logger.info(f"Stage 3 start: output_dir={output_dir}")
 
-        interpolator = RIFEInterpolator(
-            model_path=self.config.rife_model,
-            providers=self.config.providers,
-        )
+        interpolator = self._get_interpolator()
 
         eye_dir = output_dir / "eye"
         generate_eye_blink_frames(
