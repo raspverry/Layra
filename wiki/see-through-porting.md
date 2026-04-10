@@ -1,6 +1,154 @@
 # See-Through MLX 포팅
 
-## 상태: 🔴 미시작 (맥북 도착 후 시작)
+## 상태: 🟡 원본 분석 완료, 맥북 도착 후 코드 작성 시작 예정
+
+2026-04-10 원본 레포를 정독한 결과 **포팅 가능성 매우 높음**으로 판정.
+상세한 근거는 아래 "원본 코드 분석 결과" 섹션 참조.
+
+---
+
+## 원본 코드 분석 결과 (2026-04-10)
+
+WebFetch로 shitagaki-lab/see-through@main을 분석한 결과:
+
+### requirements.txt 수준
+
+`torch==2.8.0+cu128`은 핀닝되어 있지만, CUDA 최적화 의존성은
+**전혀 없다**:
+
+| 패턴 | 결과 |
+|------|------|
+| `xformers` | ❌ 없음 |
+| `triton` | ❌ 없음 |
+| `flash_attn` / `flash-attention` | ❌ 없음 |
+| `bitsandbytes` | ❌ 기본 없음 (NF4 quant는 `requirements-inference-bnb.txt`로 분리) |
+
+즉 메모리 효율 attention이나 커스텀 CUDA 커널 의존성이 없다.
+
+### inference_psd.py (메인 추론 스크립트)
+
+```python
+# 실제 임포트 (전체)
+import torch
+from utils.io_utils import find_all_imgs
+from utils import inference_utils
+from utils.inference_utils import apply_layerdiff, apply_marigold, further_extr
+from utils.torch_utils import seed_everything
+```
+
+CUDA 특화 코드 검색 결과:
+- `cuda`, `xformers`, `flash_attn`, `triton`, `torch.compile`,
+  `scaled_dot_product_attention`, `enable_xformers`, `bitsandbytes`, `NF4`
+  **모두 0건**
+- 유일한 GPU 특화는 `--group_offload` 플래그뿐 (128GB UMA에서는 불필요)
+
+### common/utils/inference_utils.py
+
+`apply_layerdiff`, `apply_marigold`의 실제 모델 로드/추론 로직:
+
+```python
+# LayerDiffuse 로딩
+unet = UNetFrameConditionModel.from_pretrained(pretrained, subfolder='unet')
+pipeline = KDiffusionStableDiffusionXLPipeline.from_pretrained(
+    pretrained, trans_vae=trans_vae, unet=unet, scheduler=None,
+)
+
+# 디바이스 배치 — 전부 표준 .to() 패턴
+vae.to(dtype=torch.bfloat16, device='cuda')
+trans_vae.to(dtype=torch.bfloat16, device='cuda')
+unet.to(dtype=torch.bfloat16, device='cuda')
+text_encoder.to(dtype=torch.bfloat16, device='cuda')
+text_encoder_2.to(dtype=torch.bfloat16, device='cuda')
+```
+
+- `xformers`, `flash_attn`, `triton`, `torch.compile`, `sdpa`,
+  `memory_efficient_attention` **전부 0건**
+- 유일한 CUDA 의존 코드는 `.to(device='cuda')`와
+  `enable_group_offload('cuda', ...)`뿐 → MLX에서는 그냥 제거
+
+허깅페이스 허브 ID:
+- LayerDiffuse: `layerdifforg/seethroughv0.0.2_layerdiff3d`
+- Marigold:    `24yearsold/seethroughv0.0.1_marigold`
+
+### common/modules/layerdiffuse/ 구조
+
+```
+layerdiffuse/
+├── __init__.py
+├── diffusers_kdiffusion_sdxl.py    # KDiffusionStableDiffusionXLPipeline
+├── layerdiff3d.py                  # UNetFrameConditionModel
+├── transformer3d.py                # Transformer3DModel, CrossFrameTransformerBlock
+├── vae.py                          # TransparentVAE
+└── utils.py
+```
+
+**KDiffusionStableDiffusionXLPipeline**:
+```python
+class KDiffusionStableDiffusionXLPipeline(StableDiffusionXLImg2ImgPipeline):
+```
+→ 표준 diffusers `StableDiffusionXLImg2ImgPipeline` 서브클래스.
+  스케줄러는 DPM++ 계열 (`DPMPP_2M_SDE` 기본, Karras sigmas 지원).
+  `enable_xformers_memory_efficient_attention()` 호출 **없음**.
+
+**transformer3d.py** (핵심):
+```python
+from diffusers.models.attention import (
+    BasicTransformerBlock, FeedForward,
+    _chunked_feed_forward, TemporalBasicTransformerBlock,
+)
+from diffusers.models.attention_processor import Attention
+from diffusers.models.embeddings import (
+    ImagePositionalEmbeddings, PatchEmbed, PixArtAlphaTextProjection,
+)
+from diffusers.models.normalization import AdaLayerNormSingle
+```
+
+- 정의 클래스: `CrossFrameTransformerBlock`, `Transformer3DModel`
+- 커스텀 attention 없음 — diffusers의 표준 `Attention` 클래스 사용
+- `@torch.compile` 데코레이터 없음
+- 3D 텐서 구조: `[batch_size, seq_length, num_frames, channels]`로
+  reshape — `num_frames`가 23개 레이어 차원
+
+### common/modules/marigold/ 구조
+
+```
+marigold/
+├── __init__.py
+├── marigold_depth_pipeline.py    # MarigoldDepthPipeline
+└── multi_res_noise.py            # multi-res noise scheduling
+```
+
+표준 prs-eth/marigold의 See-Through fine-tune 버전.
+Stable Diffusion 1.5 기반 단안 depth diffusion → MLX SD 예제에서
+가장 쉽게 포팅할 수 있는 컴포넌트.
+
+---
+
+## 포팅 맵 (MLX 컴포넌트별)
+
+이 섹션이 실제 포팅 작업의 우선순위 리스트다.
+
+| # | 원본 (PyTorch / diffusers) | MLX 목표 | 난이도 | 비고 |
+|---|---------------------------|---------|--------|------|
+| 1 | `diffusers.models.attention_processor.Attention` | `src/stage1_layerdiff/mlx_ops/attention.py` | ⭐⭐ | MLX SD 예제에 근사 구현 있음 |
+| 2 | `diffusers.models.attention.BasicTransformerBlock` | `src/stage1_layerdiff/mlx_ops/blocks.py` | ⭐⭐ | self-attn + cross-attn + FF |
+| 3 | `diffusers.models.attention.TemporalBasicTransformerBlock` | 위 파일 | ⭐⭐⭐ | 시간 축 처리 추가 |
+| 4 | `diffusers.models.normalization.AdaLayerNormSingle` | `src/stage1_layerdiff/mlx_ops/norms.py` | ⭐ | 간단 |
+| 5 | `CrossFrameTransformerBlock` (layerdiffuse 커스텀) | `src/stage1_layerdiff/transformer3d.py` | ⭐⭐⭐ | 레이어 간 cross-attn |
+| 6 | `Transformer3DModel` | 위 파일 | ⭐⭐⭐ | 3D reshape 로직 |
+| 7 | `UNetFrameConditionModel` (layerdiff3d.py) | `src/stage1_layerdiff/model.py` | ⭐⭐⭐⭐ | SDXL UNet + frame cond |
+| 8 | `TransparentVAE` (vae.py) | `src/stage1_layerdiff/vae.py` | ⭐⭐⭐ | 표준 VAE + 알파 채널 |
+| 9 | DPM++ 2M SDE 스케줄러 | `src/stage1_layerdiff/schedulers.py` | ⭐⭐ | 수치 알고리즘, CPU/MLX 모두 가능 |
+| 10 | `KDiffusionStableDiffusionXLPipeline` | `src/stage1_layerdiff/pipeline.py` | ⭐⭐⭐ | 오케스트레이션 |
+| 11 | `MarigoldDepthPipeline` | `src/stage1_layerdiff/marigold.py` | ⭐⭐ | 표준 SD1.5 depth |
+| 12 | `weights.py` — PyTorch state_dict → MLX | 이미 스켈레톤 있음 | ⭐⭐ | key mapping 필요 |
+
+### MLX SD 예제에서 재사용 가능한 부분
+
+https://github.com/ml-explore/mlx-examples/tree/main/stable_diffusion 의
+`unet.py`, `vae.py`, `tokenizer.py`가 직접 참조 대상.
+LayerDiffuse의 SDXL UNet은 MLX SD 예제의 UNet2D에 레이어 차원만 추가한
+형태로 볼 수 있다.
 
 ---
 
@@ -175,6 +323,7 @@ latent space 인코딩/디코딩:
 | 2026-04-10 | `src/stage1_layerdiff/` 스캐폴딩 | ✅ | `Stage1Pipeline`, `LayerDiffuseMLX`, `MarigoldMLX`, `weights.py` 인터페이스 정의. 전부 NotImplementedError. |
 | 2026-04-10 | `src/common/psd_io.py` `parse_psd` 구현 | ✅ | psd-tools 기반. `LayerName` StrEnum 매칭. |
 | 2026-04-10 | `src/common/psd_io.py` `write_psd` 임시 구현 | ⚠️ | Pillow로 플랫 PSD 저장. Stage 1 완성 시 진짜 레이어 PSD 작성기로 교체 필요. |
+| 2026-04-10 | See-Through 원본 코드 분석 (WebFetch) | ✅ | BLOCKER-002 해결. xformers/triton/flash_attn/compile 전부 없음 확인. 포팅 맵 작성. |
 
 ---
 

@@ -21,6 +21,12 @@
   - `src/stage3_rife/` — RIFE ONNX 래퍼 + 눈/입 프레임 생성
   - `src/cli.py` — typer CLI (`info`, `stage1`, `stage2`, `stage3`, `run`)
   - `experiments/results/` 시드 (speed/quality TSV + changelog)
+- [x] **Phase 1a: 개발 인프라 + BLOCKER-002 해결** (2026-04-10)
+  - `pyproject.toml` (editable install, `layra` CLI 엔트리포인트, ruff/mypy/pytest 설정)
+  - `Makefile` (install / test / lint / format / typecheck / ci)
+  - `tests/common/` pytest 스위트 — types, image_io, psd_io, config, psd_parser
+  - WebFetch로 See-Through 원본 코드 정독 → BLOCKER-002 해결
+  - `wiki/see-through-porting.md`에 12단계 포팅 맵 작성
 
 ---
 

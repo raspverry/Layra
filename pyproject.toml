@@ -1,0 +1,157 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "layra"
+version = "0.1.0"
+description = "애니 일러스트 1장 → MLX 레이어 분해 → SAM3/RIFE → Live2D 아바타 소재"
+readme = "README.md"
+license = { file = "LICENSE" }
+requires-python = ">=3.12"
+authors = [{ name = "Layra Project Contributors" }]
+keywords = ["mlx", "live2d", "anime", "layer-decomposition", "sam3", "rife"]
+classifiers = [
+    "Development Status :: 2 - Pre-Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: MacOS",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Multimedia :: Graphics",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+
+dependencies = [
+    # --- ML Core (MLX는 Apple Silicon 전용, 설치는 platform marker로 제한) ---
+    "mlx; platform_system == 'Darwin' and platform_machine == 'arm64'",
+    "torch>=2.4.0",
+    "torchvision>=0.19.0",
+
+    # --- Diffusion ---
+    "diffusers>=0.37.0",
+    "transformers>=4.40.0",
+    "accelerate",
+    "safetensors",
+
+    # --- ONNX (RIFE) ---
+    "onnxruntime>=1.17.0",
+
+    # --- Image Processing ---
+    "Pillow>=10.0.0",
+    "psd-tools>=1.9.0",
+    "numpy>=1.26.0",
+    "opencv-python>=4.9.0",
+
+    # --- Utilities ---
+    "tqdm",
+    "loguru",
+    "pydantic>=2.0.0",
+    "python-dotenv",
+    "typer>=0.12.0",
+    "rich",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-cov>=5.0.0",
+    "ruff>=0.5.0",
+    "mypy>=1.10.0",
+    "types-Pillow",
+]
+
+[project.scripts]
+layra = "src.cli:app"
+
+[project.urls]
+Homepage = "https://github.com/raspverry/layra"
+Repository = "https://github.com/raspverry/layra"
+Issues = "https://github.com/raspverry/layra/issues"
+
+# ============================================================
+# setuptools
+# ============================================================
+[tool.setuptools]
+packages = [
+    "src",
+    "src.common",
+    "src.stage1_layerdiff",
+    "src.stage2_sam3",
+    "src.stage3_rife",
+]
+
+# ============================================================
+# ruff
+# ============================================================
+[tool.ruff]
+line-length = 88
+target-version = "py312"
+extend-exclude = ["experiments/results", "models"]
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "B",   # flake8-bugbear
+    "UP",  # pyupgrade
+    "C4",  # flake8-comprehensions
+    "SIM", # flake8-simplify
+    "RUF", # ruff-specific
+]
+ignore = [
+    "E501",  # line too long (line-length 설정에 의존)
+    "B008",  # function call in default argument (typer.Option 패턴)
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["B011"]  # allow assert False in tests
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+
+# ============================================================
+# mypy
+# ============================================================
+[tool.mypy]
+python_version = "3.12"
+strict = false
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false
+check_untyped_defs = true
+ignore_missing_imports = true
+exclude = ["experiments/", "models/", "build/", "dist/"]
+
+[[tool.mypy.overrides]]
+module = [
+    "mlx.*",
+    "psd_tools.*",
+    "segment_anything_3.*",
+    "onnxruntime.*",
+    "cv2",
+]
+ignore_missing_imports = true
+
+# ============================================================
+# pytest
+# ============================================================
+[tool.pytest.ini_options]
+minversion = "8.0"
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = [
+    "-ra",
+    "--strict-markers",
+    "--tb=short",
+]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "mlx: tests requiring MLX (Apple Silicon only)",
+    "sam3: tests requiring SAM3 weights",
+    "rife: tests requiring RIFE ONNX model",
+]

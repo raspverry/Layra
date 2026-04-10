@@ -18,21 +18,23 @@
 
 ## 🟡 중간 우선순위
 
-### BLOCKER-002: MLX 포팅 가능성 미검증
+### ~~BLOCKER-002: MLX 포팅 가능성 미검증~~ ✅ 해결 (2026-04-10)
 
-**문제**: LayerDiffuse가 표준 SDXL UNet인지, 커스텀 CUDA 커널 사용하는지 미확인  
-**영향**: MLX 포팅 난이도 및 기간에 직접 영향  
-**확인 방법**:
-```bash
-# See-Through 클론 후 확인
-git clone https://github.com/shitagaki-lab/see-through
-grep -r "cuda" src/ --include="*.py" | grep -v ".pyc"
-grep -r "xformers" src/ --include="*.py"
-grep -r "triton" src/ --include="*.py"
-```
+**해결 방법**: WebFetch로 원본 레포 정독. 자세한 내용은
+`wiki/see-through-porting.md`의 "원본 코드 분석 결과" 섹션 참조.
 
-**현재 상태**: 미확인  
-**해결 기한**: 맥북 도착 후 Day 1
+**결론**: 포팅 가능성 매우 높음. 주요 근거:
+- `xformers`, `triton`, `flash_attn`, `torch.compile`,
+  `scaled_dot_product_attention`, `memory_efficient_attention` 전부 0건
+- `KDiffusionStableDiffusionXLPipeline`은 diffusers 표준
+  `StableDiffusionXLImg2ImgPipeline` 서브클래스
+- `transformer3d.py`는 diffusers 표준 `Attention`, `BasicTransformerBlock`,
+  `TemporalBasicTransformerBlock`, `AdaLayerNormSingle`만 사용
+- 커스텀 CUDA 커널/Metal shader 재작성 불필요
+- 유일한 CUDA 의존은 `.to(device='cuda')` 패턴뿐 → MLX는 unified memory라 제거만 하면 됨
+
+**잔여 작업**: 실제 포팅은 맥북 도착 후. 12단계 포팅 맵은
+`wiki/see-through-porting.md`의 "포팅 맵" 섹션에 정리.
 
 ---
 
@@ -84,6 +86,7 @@ print(providers)  # CoreMLExecutionProvider 있는지 확인
 
 | 번호 | 내용 | 해결 방법 | 해결 날짜 |
 |------|------|----------|----------|
+| BLOCKER-002 | MLX 포팅 가능성 미검증 | WebFetch로 원본 정독, CUDA/xformers/triton/flash_attn 의존성 0건 확인, 12단계 포팅 맵 작성 | 2026-04-10 |
 | MINOR-001 | Wiki SAM3 설치법 3곳 불일치 (PyPI 이름 vs git+) | 전부 git+로 통일 | 2026-04-10 |
 | MINOR-002 | setup.sh SAM3 fallback echo가 항상 실행되던 쉘 버그 | if/then/fi 블록으로 재작성 | 2026-04-10 |
 | MINOR-003 | requirements.txt의 onnxruntime>=2.0.0 존재하지 않는 버전 | >=1.17.0으로 수정 | 2026-04-10 |
