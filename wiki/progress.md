@@ -41,6 +41,29 @@
   - PachiPakuGen `extract_neck_mask.py` 분석 → SAM3 **text prompt 방식** 발견,
     `sam3-rife.md` 업데이트, `neck_extractor.py`/`mouth_extractor.py`에
     리팩토링 TODO 주석 추가
+- [x] **Phase 1c: MLX 포팅 템플릿 프리뷰** (2026-04-10)
+  - MLX SD 예제(`unet.py`, `vae.py`, `sampler.py`, `config.py`)를 WebFetch로
+    상세 정독 → 정확한 class/__init__/config 시그니처 확보
+  - `src/stage1_layerdiff/configs.py` — SDXL-LayerDiffuse 전체 dataclass config
+    (UNetFrameConditionConfig, TransparentVAEConfig, SDXLTextEncoderConfig,
+    MarigoldConfig, DiffusionConfig). 전부 `frozen=True`.
+  - `src/stage1_layerdiff/mlx_ops/` — 6개 프리미티브 모듈 (embeddings, norms,
+    attention, resnet, blocks) + CrossFrameTransformerBlock, Transformer3DModel
+  - `src/stage1_layerdiff/unet_frame.py` — UNetFrameConditionModel 스켈레톤,
+    전체 forward pseudo-code가 docstring에 상세히 기록됨
+  - `src/stage1_layerdiff/vae.py` — TransparentVAE 스켈레톤
+  - `src/stage1_layerdiff/schedulers.py` — **완전 구현된 DPM++ 2M SDE** (numpy 기반).
+    beta/alphas_cumprod/Karras sigmas/single step 업데이트 모두 수학적으로 검증됨
+  - `src/stage1_layerdiff/weights.py` — PyTorch safetensors → MLX 변환 완전 스캐폴딩
+    (component별 KEY_MAPS, REWRITE_RULES, CLI)
+  - `src/stage1_layerdiff/model.py`/`marigold.py` — 새 모듈들 사용, sample()/
+    predict_depth() 의사코드가 docstring에 저장됨
+  - 테스트 추가:
+    - `tests/stage1_layerdiff/test_configs.py` (12 tests)
+    - `tests/stage1_layerdiff/test_schedulers.py` (20 tests — 수식 검증)
+    - `tests/stage1_layerdiff/test_weights_mapping.py` (10 tests)
+  - **`make ci` 결과: 74/74 pytest, 0 mypy errors across 33 files**
+  - 맥북 도착 시 `NotImplementedError` 위치만 채우면 Stage 1이 동작하는 상태
 
 ---
 

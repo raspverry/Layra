@@ -1,9 +1,23 @@
 # See-Through MLX 포팅
 
-## 상태: 🟡 원본 분석 완료, 맥북 도착 후 코드 작성 시작 예정
+## 상태: 🟢 템플릿 완료, 맥북 도착 시 MLX 연산만 채우면 됨
 
-2026-04-10 원본 레포를 정독한 결과 **포팅 가능성 매우 높음**으로 판정.
-상세한 근거는 아래 "원본 코드 분석 결과" 섹션 참조.
+- **Phase 1a (2026-04-10)**: 원본 코드 분석 → 포팅 가능성 확정
+- **Phase 1b (2026-04-10)**: MLX SD 예제 분석 → 12단계 포팅 맵
+- **Phase 1c (2026-04-10)**: Stage 1 전체 템플릿 프리뷰 작성
+  - `src/stage1_layerdiff/configs.py`: 모든 dataclass config 확정
+  - `src/stage1_layerdiff/mlx_ops/`: 프리미티브 6개 (embeddings, norms,
+    attention, resnet, blocks, Transformer3DModel/CrossFrame)
+  - `src/stage1_layerdiff/schedulers.py`: **DPM++ 2M SDE 수학적으로 완전 구현**
+    (numpy 기반, Karras sigmas 포함, 20개 unit test)
+  - `src/stage1_layerdiff/weights.py`: PyTorch safetensors → MLX 변환 완전 스캐폴딩
+  - `src/stage1_layerdiff/unet_frame.py`, `vae.py`, `model.py`, `marigold.py`:
+    클래스 구조와 forward 의사코드가 docstring에 상세히 기록됨
+  - CI: 74/74 pytest + 0 mypy errors (33 source files)
+
+**맥북 도착 후 할 일**: 각 모듈의 `NotImplementedError` 위치에서
+주석으로 적어둔 MLX 연산만 구현하면 된다. 인터페이스, config, 수학 로직은
+이미 확정된 상태.
 
 ---
 
@@ -142,6 +156,23 @@ Stable Diffusion 1.5 기반 단안 depth diffusion → MLX SD 예제에서
 | 10 | `KDiffusionStableDiffusionXLPipeline` | `src/stage1_layerdiff/pipeline.py` | ⭐⭐⭐ | 오케스트레이션 |
 | 11 | `MarigoldDepthPipeline` | `src/stage1_layerdiff/marigold.py` | ⭐⭐ | 표준 SD1.5 depth |
 | 12 | `weights.py` — PyTorch state_dict → MLX | 이미 스켈레톤 있음 | ⭐⭐ | key mapping 필요 |
+
+### Layra 측 포팅 템플릿 위치 (Phase 1c 결과)
+
+| 원본 / MLX SD 대응 | Layra 파일 | 상태 |
+|---|---|---|
+| UNetConfig, AutoencoderConfig, DiffusionConfig | `configs.py` | ✅ 값 확정 |
+| TimestepEmbedding, SDXL addition embedding | `mlx_ops/embeddings.py` | 🟡 스켈레톤 |
+| AdaLayerNormSingle | `mlx_ops/norms.py` | 🟡 스켈레톤 |
+| TransformerBlock + CrossFrameTransformerBlock | `mlx_ops/attention.py` | 🟡 스켈레톤 |
+| ResnetBlock2D | `mlx_ops/resnet.py` | 🟡 스켈레톤 |
+| Transformer3DModel + UNetBlock2D | `mlx_ops/blocks.py` | 🟡 스켈레톤 |
+| UNetFrameConditionModel (SDXL+frame) | `unet_frame.py` | 🟡 스켈레톤 (forward 의사코드) |
+| TransparentVAE | `vae.py` | 🟡 스켈레톤 |
+| DPMSolverMultistep (DPM++ 2M SDE) | `schedulers.py` | ✅ **numpy 완전 구현 + 20 tests** |
+| PyTorch→MLX weights | `weights.py` | ✅ KEY_MAPS + convert_state_dict 완료 |
+| LayerDiffuseMLX 고수준 | `model.py` | 🟡 sample() 의사코드 |
+| MarigoldMLX | `marigold.py` | 🟡 predict_depth() 의사코드 |
 
 ### MLX SD 예제에서 재사용 가능한 부분 (2026-04-10 분석)
 

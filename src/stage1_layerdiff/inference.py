@@ -4,12 +4,15 @@ See-Through의 inference_psd.py를 MLX로 포팅한 최종 형태가 될 모듈.
 현재는 파이프라인 구조와 인터페이스만 정의되어 있고,
 실제 MLX 모델 호출은 TODO로 남겨져 있다.
 
-맥북 도착 후 작업 순서:
-    1. model.py에 LayerDiffuse MLX UNet 구현
-    2. marigold.py에 Marigold MLX depth 모델 구현
-    3. weights.py로 PyTorch 체크포인트 → MLX npz 변환
-    4. 이 파일의 Stage1Pipeline.__call__ 구현
-    5. wiki/see-through-porting.md Step 6 검증 (IoU)
+맥북 도착 후 작업 순서 (wiki/see-through-porting.md의 12-step 포팅 맵 참조):
+    1. weights.py — PyTorch safetensors → MLX npz 변환 실행
+    2. mlx_ops/ 안의 프리미티브 (attention, resnet, blocks) 구현
+    3. unet_frame.py — UNetFrameConditionModel forward 구현
+    4. vae.py — TransparentVAE encode/decode 구현
+    5. model.py — LayerDiffuseMLX.sample() 구현 (DPM++ 2M SDE loop)
+    6. 이 파일의 Stage1Pipeline.decompose() 구현 (24 layer → LayerSet)
+    7. Marigold depth 기반 drawing_order 결정
+    8. wiki/see-through-porting.md Step 6 — IoU 검증
 """
 
 from __future__ import annotations
@@ -17,12 +20,14 @@ from __future__ import annotations
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from src.common.config import Stage1Config, get_config
 from src.common.logging import get_logger
 from src.common.psd_io import write_psd
 from src.common.types import LayerSet, Stage1Output
+from src.stage1_layerdiff.marigold import MarigoldMLX
+from src.stage1_layerdiff.model import LayerDiffuseMLX
 
 if TYPE_CHECKING:
     import numpy as np
@@ -38,8 +43,12 @@ class Stage1Pipeline:
     """
 
     config: Stage1Config
-    _layerdiff: Any = field(default=None, init=False, repr=False)
-    _marigold: Any = field(default=None, init=False, repr=False)
+    _layerdiff: LayerDiffuseMLX | None = field(
+        default=None, init=False, repr=False
+    )
+    _marigold: MarigoldMLX | None = field(
+        default=None, init=False, repr=False
+    )
 
     def load_models(self) -> None:
         """LayerDiffuse와 Marigold 가중치를 MLX로 로드.
@@ -48,11 +57,17 @@ class Stage1Pipeline:
             FileNotFoundError: 가중치가 없을 때.
             NotImplementedError: MLX 포팅 미완료.
         """
-        # TODO(stage1): model.py의 LayerDiffuseMLX 로드
-        # TODO(stage1): marigold.py의 MarigoldMLX 로드
-        raise NotImplementedError(
-            "MLX porting pending — see wiki/see-through-porting.md"
+        self._layerdiff = LayerDiffuseMLX(
+            weights_path=self.config.layerdiff_weights,
+            dtype=self.config.dtype,
         )
+        self._layerdiff.load()  # raises NotImplementedError until Mac arrives
+
+        self._marigold = MarigoldMLX(
+            weights_path=self.config.marigold_weights,
+            dtype=self.config.dtype,
+        )
+        self._marigold.load()
 
     def decompose(self, image: np.ndarray) -> LayerSet:
         """단일 RGB 이미지 → 레이어 분해.
@@ -66,12 +81,17 @@ class Stage1Pipeline:
         Raises:
             NotImplementedError: MLX 포팅 미완료.
         """
-        if self._layerdiff is None:
+        if self._layerdiff is None or self._marigold is None:
             self.load_models()
-        # TODO(stage1): LayerDiffuse sampling loop
-        # TODO(stage1): Marigold depth → drawing order
+        # TODO(stage1): 단계별:
+        #   1. image → VAE encode → initial latent
+        #   2. LayerDiffuseMLX.sample() → (1, C, num_frames=23, H, W)
+        #   3. TransparentVAE.decode → (num_frames, H, W, 4) RGBA
+        #   4. MarigoldMLX.predict_depth(image) → per-layer depth ordering
+        #   5. LayerSet 생성 (LayerName 매핑은 target_tag_list 기반)
         raise NotImplementedError(
-            "MLX porting pending — see wiki/see-through-porting.md"
+            "Stage1Pipeline.decompose pending — "
+            "see wiki/see-through-porting.md"
         )
 
     def __call__(

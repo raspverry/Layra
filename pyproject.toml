@@ -103,6 +103,11 @@ select = [
 ignore = [
     "E501",  # line too long (line-length 설정에 의존)
     "B008",  # function call in default argument (typer.Option 패턴)
+    # Scientific computing uses Greek letters in docstrings/comments.
+    # These are intentional mathematical notation, not ASCII typos.
+    "RUF001",  # ambiguous unicode in string literal
+    "RUF002",  # ambiguous unicode in docstring
+    "RUF003",  # ambiguous unicode in comment
 ]
 
 [tool.ruff.lint.per-file-ignores]
